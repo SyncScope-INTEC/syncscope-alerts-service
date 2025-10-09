@@ -26,7 +26,7 @@ from .serializers import (
     AlertSerializer,
     AlertStatisticsSerializer,
     NotificationChannelSerializer,
-    NotificationLogSerializer,
+    NotificationSerializer,
 )
 from .tasks import evaluate_single_alert_rule, test_notification_channel
 
@@ -393,7 +393,7 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 class NotificationLogViewSet(ServerlessViewMixin, viewsets.ReadOnlyModelViewSet):
     """ViewSet for viewing notification logs"""
 
-    serializer_class = NotificationLogSerializer
+    serializer_class = NotificationSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
