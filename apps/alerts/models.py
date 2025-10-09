@@ -1,5 +1,5 @@
 """
-Alert Service Models - Mapped to existing database schema
+Alert Service Models
 """
 
 import sys
