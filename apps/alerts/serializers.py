@@ -10,28 +10,18 @@ from .models import AlertNotification, AlertRule, Notification, NotificationChan
 class AlertRuleSerializer(serializers.ModelSerializer):
     """Serializer for AlertRule model"""
 
-    notification_channels = serializers.PrimaryKeyRelatedField(
-        many=True, queryset=NotificationChannel.objects.all(), required=False
-    )
-
     class Meta:
         model = AlertRule
         fields = [
             "id",
             "name",
             "description",
-            "rule_type",
             "metric_type",
             "condition",
             "threshold_value",
-            "severity",
-            "target_type",
-            "target_id",
             "is_active",
-            "cooldown_minutes",
-            "notification_channels",
+            "check_interval_minutes",
             "company_id",
-            "created_by",
             "created_at",
             "updated_at",
         ]
@@ -39,10 +29,14 @@ class AlertRuleSerializer(serializers.ModelSerializer):
 
     def validate_condition(self, value):
         """Validate condition JSON structure"""
-        if not isinstance(value, dict):
-            raise serializers.ValidationError("Condition must be a JSON object")
+        # Condition can be a string or dict
+        if isinstance(value, str):
+            return value
 
-        # Check for required fields
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("Condition must be a string or JSON object")
+
+        # Check for required fields if it's a dict
         if "operator" not in value:
             raise serializers.ValidationError("Condition must have an 'operator' field")
 
@@ -53,84 +47,46 @@ class AlertRuleSerializer(serializers.ModelSerializer):
 
         return value
 
-    def create(self, validated_data):
-        """Create alert rule with notification channels"""
-        notification_channels = validated_data.pop("notification_channels", [])
-        alert_rule = AlertRule.objects.create(**validated_data)
-
-        # Add notification channels
-        if notification_channels:
-            alert_rule.notification_channels.set(notification_channels)
-
-        return alert_rule
-
-    def update(self, instance, validated_data):
-        """Update alert rule with notification channels"""
-        notification_channels = validated_data.pop("notification_channels", None)
-
-        # Update basic fields
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-
-        # Update notification channels if provided
-        if notification_channels is not None:
-            instance.notification_channels.set(notification_channels)
-
-        return instance
-
 
 class AlertRuleDetailSerializer(AlertRuleSerializer):
-    """Detailed serializer for AlertRule with nested notification channels"""
-
-    notification_channels = serializers.SerializerMethodField()
-
-    def get_notification_channels(self, obj):
-        """Get notification channels with details"""
-        channels = obj.notification_channels.all()
-        return NotificationChannelSerializer(channels, many=True).data
+    """Detailed serializer for AlertRule"""
+    pass
 
 
 class AlertSerializer(serializers.ModelSerializer):
     """Serializer for Alert model"""
 
-    alert_rule_name = serializers.CharField(source="alert_rule.name", read_only=True)
+    rule_name = serializers.CharField(source="rule.name", read_only=True)
 
     class Meta:
         model = AlertNotification
         fields = [
             "id",
-            "alert_rule",
-            "alert_rule_name",
-            "state",
+            "rule",
+            "rule_name",
+            "triggered_for_user_id",
+            "triggered_for_team_id",
             "severity",
             "title",
             "message",
-            "triggered_at",
-            "acknowledged_at",
+            "is_read",
             "acknowledged_by",
-            "resolved_at",
-            "resolved_by",
-            "metadata",
-            "target_type",
-            "target_id",
-            "company_id",
-            "created_at",
-            "updated_at",
+            "acknowledged_at",
+            "triggered_at",
+            "status",
+            "context_data",
         ]
         read_only_fields = [
             "id",
-            "alert_rule_name",
+            "rule_name",
             "triggered_at",
-            "created_at",
-            "updated_at",
         ]
 
 
 class AlertDetailSerializer(AlertSerializer):
     """Detailed serializer for Alert with full alert rule info"""
 
-    alert_rule = AlertRuleSerializer(read_only=True)
+    rule = AlertRuleSerializer(read_only=True)
 
 
 class AlertAcknowledgeSerializer(serializers.Serializer):
@@ -155,15 +111,13 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "name",
-            "channel_type",
+            "type",
             "config",
             "is_active",
             "company_id",
-            "created_by",
             "created_at",
-            "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at"]
 
     def validate_config(self, value):
         """Validate config JSON structure based on channel type"""
@@ -171,7 +125,7 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Config must be a JSON object")
 
         # Validate based on channel type
-        channel_type = self.initial_data.get("channel_type")
+        channel_type = self.initial_data.get("type")
 
         if channel_type == "email":
             if "recipients" not in value:
@@ -194,31 +148,29 @@ class NotificationSerializer(serializers.ModelSerializer):
     """Serializer for Notification model"""
 
     alert_title = serializers.CharField(source="alert.title", read_only=True)
-    channel_name = serializers.CharField(source="channel.name", read_only=True)
 
     class Meta:
         model = Notification
         fields = [
             "id",
+            "user_id",
             "alert",
             "alert_title",
-            "channel",
-            "channel_name",
-            "status",
+            "notification_type",
+            "subject",
+            "message",
             "sent_at",
-            "error_message",
-            "retry_count",
-            "metadata",
+            "read_at",
+            "status",
+            "delivery_metadata",
             "created_at",
-            "updated_at",
         ]
         read_only_fields = [
             "id",
             "alert_title",
-            "channel_name",
             "sent_at",
+            "read_at",
             "created_at",
-            "updated_at",
         ]
 
 

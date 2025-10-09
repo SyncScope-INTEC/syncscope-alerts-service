@@ -33,7 +33,7 @@ class TestAlertRuleSerializer:
             description="Test alert rule",
             company_id=company_id,
             metric_type="test_metric",
-            condition={"operator": "gt", "value": 100},
+            condition="greater_than",
             threshold_value=100,
             check_interval_minutes=60,
             is_active=True,
@@ -54,7 +54,7 @@ class TestAlertRuleSerializer:
             "description": "New test rule",
             "company_id": str(company_id),
             "metric_type": "cpu_usage",
-            "condition": {"operator": "gte", "value": 80},
+            "condition": "greater_than_or_equal",
             "threshold_value": 80,
             "check_interval_minutes": 30,
             "is_active": True,
@@ -110,59 +110,45 @@ class TestAlertRuleSerializer:
 
         assert "Invalid operator" in str(exc.value)
 
-    def test_create_with_notification_channels(self):
-        """Test creating alert rule with notification channels"""
+    def test_create_alert_rule(self):
+        """Test creating alert rule"""
         company_id = uuid.uuid4()
-        channel = NotificationChannel.objects.create(
-            name="Test Channel",
-            type="email",
-            config={"recipients": ["test@example.com"]},
-            company_id=company_id,
-        )
 
         data = {
-            "name": "Rule with Channels",
+            "name": "New Rule",
             "company_id": str(company_id),
             "metric_type": "test",
-            "condition": {"operator": "gt", "value": 10},
+            "condition": "greater_than",
             "threshold_value": 10,
             "check_interval_minutes": 30,
-            "notification_channels": [channel.id],
         }
 
         serializer = AlertRuleSerializer(data=data)
         assert serializer.is_valid()
         rule = serializer.save()
 
-        assert rule.notification_channels.count() == 1
+        assert rule.name == "New Rule"
+        assert rule.condition == "greater_than"
 
-    def test_update_with_notification_channels(self):
-        """Test updating alert rule with notification channels"""
+    def test_update_alert_rule(self):
+        """Test updating alert rule"""
         company_id = uuid.uuid4()
         rule = AlertRule.objects.create(
             name="Original Rule",
             company_id=company_id,
             metric_type="test",
-            condition={"operator": "gt", "value": 10},
+            condition="greater_than",
             threshold_value=10,
             check_interval_minutes=30,
-        )
-
-        channel = NotificationChannel.objects.create(
-            name="New Channel",
-            type="email",
-            config={"recipients": ["new@example.com"]},
-            company_id=company_id,
         )
 
         data = {
             "name": "Updated Rule",
             "company_id": str(company_id),
             "metric_type": "test",
-            "condition": {"operator": "lt", "value": 5},
+            "condition": "less_than",
             "threshold_value": 5,
             "check_interval_minutes": 15,
-            "notification_channels": [channel.id],
         }
 
         serializer = AlertRuleSerializer(rule, data=data)
@@ -170,39 +156,31 @@ class TestAlertRuleSerializer:
         updated_rule = serializer.save()
 
         assert updated_rule.name == "Updated Rule"
-        assert updated_rule.notification_channels.count() == 1
+        assert updated_rule.condition == "less_than"
 
 
 @pytest.mark.django_db
 class TestAlertRuleDetailSerializer:
     """Tests for AlertRuleDetailSerializer"""
 
-    def test_detailed_serialization_with_channels(self):
-        """Test detailed serialization includes channel details"""
+    def test_detailed_serialization(self):
+        """Test detailed serialization"""
         company_id = uuid.uuid4()
-        channel = NotificationChannel.objects.create(
-            name="Email Channel",
-            type="email",
-            config={"recipients": ["admin@example.com"]},
-            company_id=company_id,
-        )
 
         rule = AlertRule.objects.create(
             name="Detailed Rule",
             company_id=company_id,
             metric_type="test",
-            condition={"operator": "gt", "value": 100},
+            condition="greater_than",
             threshold_value=100,
             check_interval_minutes=60,
         )
-        rule.notification_channels.add(channel)
 
         serializer = AlertRuleDetailSerializer(rule)
         data = serializer.data
 
-        assert "notification_channels" in data
-        assert len(data["notification_channels"]) == 1
-        assert data["notification_channels"][0]["name"] == "Email Channel"
+        assert data["name"] == "Detailed Rule"
+        assert data["threshold_value"] == "100.00"
 
 
 @pytest.mark.django_db
@@ -216,7 +194,7 @@ class TestAlertSerializer:
             name="Test Rule",
             company_id=company_id,
             metric_type="test",
-            condition={"operator": "gt", "value": 10},
+            condition="greater_than",
             threshold_value=10,
             check_interval_minutes=30,
         )
@@ -228,7 +206,6 @@ class TestAlertSerializer:
             title="Test Alert",
             message="Test message",
             status="pending",
-            company_id=company_id,
         )
 
         serializer = AlertSerializer(alert)
@@ -236,7 +213,7 @@ class TestAlertSerializer:
 
         assert data["title"] == "Test Alert"
         assert data["severity"] == "high"
-        assert data["alert_rule_name"] == "Test Rule"
+        assert data["rule_name"] == "Test Rule"
 
 
 @pytest.mark.django_db
@@ -291,13 +268,13 @@ class TestNotificationChannelSerializer:
         data = serializer.data
 
         assert data["name"] == "Email Channel"
-        assert data["channel_type"] == "email"
+        assert data["type"] == "email"
 
     def test_validate_config_email_valid(self):
         """Test email config validation with valid data"""
         data = {
             "name": "Email",
-            "channel_type": "email",
+            "type": "email",
             "config": {"recipients": ["admin@example.com", "dev@example.com"]},
             "company_id": str(uuid.uuid4()),
         }
@@ -309,7 +286,7 @@ class TestNotificationChannelSerializer:
         """Test email config validation without recipients"""
         data = {
             "name": "Email",
-            "channel_type": "email",
+            "type": "email",
             "config": {"other_field": "value"},
             "company_id": str(uuid.uuid4()),
         }
@@ -322,7 +299,7 @@ class TestNotificationChannelSerializer:
         """Test email config validation with wrong recipients type"""
         data = {
             "name": "Email",
-            "channel_type": "email",
+            "type": "email",
             "config": {"recipients": "not-a-list"},
             "company_id": str(uuid.uuid4()),
         }
@@ -334,7 +311,7 @@ class TestNotificationChannelSerializer:
         """Test Slack config validation with valid data"""
         data = {
             "name": "Slack",
-            "channel_type": "slack",
+            "type": "slack",
             "config": {"webhook_url": "https://hooks.slack.com/services/xxx"},
             "company_id": str(uuid.uuid4()),
         }
@@ -346,7 +323,7 @@ class TestNotificationChannelSerializer:
         """Test Slack config validation without webhook_url"""
         data = {
             "name": "Slack",
-            "channel_type": "slack",
+            "type": "slack",
             "config": {"channel": "#alerts"},
             "company_id": str(uuid.uuid4()),
         }
@@ -359,7 +336,7 @@ class TestNotificationChannelSerializer:
         """Test webhook config validation with valid data"""
         data = {
             "name": "Webhook",
-            "channel_type": "webhook",
+            "type": "webhook",
             "config": {"url": "https://example.com/webhook"},
             "company_id": str(uuid.uuid4()),
         }
@@ -371,7 +348,7 @@ class TestNotificationChannelSerializer:
         """Test webhook config validation without url"""
         data = {
             "name": "Webhook",
-            "channel_type": "webhook",
+            "type": "webhook",
             "config": {"method": "POST"},
             "company_id": str(uuid.uuid4()),
         }
@@ -384,7 +361,7 @@ class TestNotificationChannelSerializer:
         """Test config validation with non-dict value"""
         data = {
             "name": "Invalid",
-            "channel_type": "email",
+            "type": "email",
             "config": "not-a-dict",
             "company_id": str(uuid.uuid4()),
         }

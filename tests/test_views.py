@@ -52,7 +52,7 @@ def alert_rule(company_id):
 
 
 @pytest.fixture
-def alert_notification(alert_rule, company_id):
+def alert_notification(alert_rule):
     """Fixture for creating an alert notification"""
     user_id = uuid.uuid4()
     return AlertNotification.objects.create(
@@ -62,7 +62,6 @@ def alert_notification(alert_rule, company_id):
         title="Test Alert",
         message="This is a test alert",
         status="pending",
-        company_id=company_id,
     )
 
 
@@ -84,7 +83,7 @@ class TestAPIHome:
 
     def test_api_home(self, api_client):
         """Test API home endpoint returns correct info"""
-        response = api_client.get("/api/")
+        response = api_client.get("/")
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -103,7 +102,7 @@ class TestAlertRuleViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_rule.company_id
 
-        response = api_client.get("/api/rules/")
+        response = api_client.get("/alerts/rules/")
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 1
@@ -123,7 +122,7 @@ class TestAlertRuleViewSet:
             "is_active": True,
         }
 
-        response = api_client.post("/api/rules/", data, format="json")
+        response = api_client.post("/alerts/rules/", data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["name"] == "New Test Rule"
@@ -242,7 +241,7 @@ class TestAlertViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_notification.company_id
 
-        response = api_client.get("/api/alerts/")
+        response = api_client.get("/alerts/")
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 1
@@ -331,10 +330,9 @@ class TestAlertViewSet:
             title="Critical Alert",
             message="Critical",
             status="pending",
-            company_id=company_id,
         )
 
-        response = api_client.get("/api/alerts/?severity=critical")
+        response = api_client.get("/alerts/?severity=critical")
 
         assert response.status_code == status.HTTP_200_OK
 
@@ -350,7 +348,7 @@ class TestNotificationChannelViewSet:
         mock_user.company_id = notification_channel.company_id
         mock_perm.return_value = True
 
-        response = api_client.get("/api/channels/")
+        response = api_client.get("/alerts/channels/")
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 1
@@ -369,7 +367,7 @@ class TestNotificationChannelViewSet:
             "is_active": True,
         }
 
-        response = api_client.post("/api/channels/", data, format="json")
+        response = api_client.post("/alerts/channels/", data, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["name"] == "New Email Channel"
@@ -387,7 +385,7 @@ class TestNotificationChannelViewSet:
             "config": {"email": "test@example.com"},
         }
 
-        response = api_client.post("/api/channels/", data, format="json")
+        response = api_client.post("/alerts/channels/", data, format="json")
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
@@ -413,7 +411,7 @@ class TestNotificationLogViewSet:
         """Test listing notification logs"""
         api_client.force_authenticate(user=mock_user)
 
-        response = api_client.get("/api/notifications/")
+        response = api_client.get("/alerts/notifications/")
 
         # Should return 200 even if empty
         assert response.status_code == status.HTTP_200_OK
