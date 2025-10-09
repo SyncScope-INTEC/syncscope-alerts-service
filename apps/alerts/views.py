@@ -44,7 +44,7 @@ def api_home(request):
             "status": "operational",
             "endpoints": {
                 "rules": "/alerts/rules/",
-                "alerts": "/alerts/",
+                "alerts": "/alerts/alerts/",
                 "channels": "/alerts/channels/",
                 "notifications": "/alerts/notifications/",
                 "health": "/health/",

@@ -14,9 +14,9 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r"rules", AlertRuleViewSet, basename="alert-rules")
-router.register(r"", AlertViewSet, basename="alerts")
 router.register(r"channels", NotificationChannelViewSet, basename="notification-channels")
 router.register(r"notifications", NotificationLogViewSet, basename="notification-logs")
+router.register(r"alerts", AlertViewSet, basename="alerts")
 
 urlpatterns = [
     path("", include(router.urls)),
