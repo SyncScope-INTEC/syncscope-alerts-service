@@ -4,7 +4,7 @@ Serializers for Alerts Service
 
 from rest_framework import serializers
 
-from .models import Alert, AlertRule, NotificationChannel, NotificationLog
+from .models import AlertNotification, AlertRule, Notification, NotificationChannel
 
 
 class AlertRuleSerializer(serializers.ModelSerializer):
@@ -15,7 +15,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = AlertRule
+        model = AlertNotificationRule
         fields = [
             "id",
             "name",
@@ -97,7 +97,7 @@ class AlertSerializer(serializers.ModelSerializer):
     alert_rule_name = serializers.CharField(source="alert_rule.name", read_only=True)
 
     class Meta:
-        model = Alert
+        model = AlertNotification
         fields = [
             "id",
             "alert_rule",
@@ -190,14 +190,14 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
         return value
 
 
-class NotificationLogSerializer(serializers.ModelSerializer):
-    """Serializer for NotificationLog model"""
+class NotificationSerializer(serializers.ModelSerializer):
+    """Serializer for Notification model"""
 
     alert_title = serializers.CharField(source="alert.title", read_only=True)
     channel_name = serializers.CharField(source="channel.name", read_only=True)
 
     class Meta:
-        model = NotificationLog
+        model = Notification
         fields = [
             "id",
             "alert",

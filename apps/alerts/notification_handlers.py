@@ -14,7 +14,7 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 
-from .models import Alert, NotificationChannel, NotificationLog
+from .models import AlertNotification, Notification, NotificationChannel
 
 logger = logging.getLogger(__name__)
 
@@ -23,21 +23,21 @@ class NotificationHandler(ABC):
     """Base class for notification handlers"""
 
     @abstractmethod
-    def send(self, alert: Alert, channel: NotificationChannel, notification_log: NotificationLog):
+    def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         """
         Send notification through this channel
 
         Args:
-            alert: Alert to notify about
+            alert: AlertNotification to notify about
             channel: NotificationChannel configuration
-            notification_log: NotificationLog to track delivery
+            notification_log: Notification to track delivery
 
         Returns:
             bool: True if successful, False otherwise
         """
         pass
 
-    def _format_alert_data(self, alert: Alert):
+    def _format_alert_data(self, alert: AlertNotification):
         """Format alert data for notification"""
         return {
             "id": str(alert.id),
@@ -55,7 +55,7 @@ class NotificationHandler(ABC):
 class EmailNotificationHandler(NotificationHandler):
     """Handler for email notifications"""
 
-    def send(self, alert: Alert, channel: NotificationChannel, notification_log: NotificationLog):
+    def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         try:
             config = channel.config
             recipients = config.get("recipients", [])
@@ -85,7 +85,7 @@ class EmailNotificationHandler(NotificationHandler):
             notification_log.error_message = str(e)
             return False
 
-    def _format_email_message(self, alert: Alert):
+    def _format_email_message(self, alert: AlertNotification):
         """Format email message"""
         message = f"""
 Alert: {alert.title}
@@ -108,7 +108,7 @@ This is an automated alert from SyncScope.
 class SlackNotificationHandler(NotificationHandler):
     """Handler for Slack notifications"""
 
-    def send(self, alert: Alert, channel: NotificationChannel, notification_log: NotificationLog):
+    def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         try:
             config = channel.config
             webhook_url = config.get("webhook_url")
@@ -141,7 +141,7 @@ class SlackNotificationHandler(NotificationHandler):
             notification_log.error_message = str(e)
             return False
 
-    def _format_slack_message(self, alert: Alert):
+    def _format_slack_message(self, alert: AlertNotification):
         """Format Slack message with blocks"""
         # Color based on severity
         color_map = {
@@ -190,7 +190,7 @@ class SlackNotificationHandler(NotificationHandler):
 class WebhookNotificationHandler(NotificationHandler):
     """Handler for webhook notifications"""
 
-    def send(self, alert: Alert, channel: NotificationChannel, notification_log: NotificationLog):
+    def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         try:
             config = channel.config
             webhook_url = config.get("url")
@@ -236,7 +236,7 @@ class WebhookNotificationHandler(NotificationHandler):
             notification_log.error_message = str(e)
             return False
 
-    def _format_webhook_payload(self, alert: Alert, config: dict):
+    def _format_webhook_payload(self, alert: AlertNotification, config: dict):
         """Format webhook payload"""
         # Base payload
         payload = {
@@ -254,7 +254,7 @@ class WebhookNotificationHandler(NotificationHandler):
 class InAppNotificationHandler(NotificationHandler):
     """Handler for in-app notifications via WebSocket"""
 
-    def send(self, alert: Alert, channel: NotificationChannel, notification_log: NotificationLog):
+    def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         try:
             config = channel.config
             user_ids = config.get("user_ids", [])
@@ -310,7 +310,7 @@ class InAppNotificationHandler(NotificationHandler):
 class SMSNotificationHandler(NotificationHandler):
     """Handler for SMS notifications (placeholder for future implementation)"""
 
-    def send(self, alert: Alert, channel: NotificationChannel, notification_log: NotificationLog):
+    def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         logger.warning("SMS notifications not yet implemented")
         notification_log.error_message = "SMS not implemented"
         return False
@@ -319,7 +319,7 @@ class SMSNotificationHandler(NotificationHandler):
 class PushNotificationHandler(NotificationHandler):
     """Handler for push notifications (placeholder for future implementation)"""
 
-    def send(self, alert: Alert, channel: NotificationChannel, notification_log: NotificationLog):
+    def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         logger.warning("Push notifications not yet implemented")
         notification_log.error_message = "Push notifications not implemented"
         return False
@@ -336,12 +336,12 @@ NOTIFICATION_HANDLERS = {
 }
 
 
-def send_notification(alert: Alert, channel: NotificationChannel):
+def send_notification(alert: AlertNotification, channel: NotificationChannel):
     """
     Send notification for an alert through a specific channel
 
     Args:
-        alert: Alert to notify about
+        alert: AlertNotification to notify about
         channel: NotificationChannel to use
 
     Returns:

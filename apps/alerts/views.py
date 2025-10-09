@@ -15,7 +15,7 @@ from rest_framework.views import APIView
 
 from .authentication import AlertPermissions
 from .db_mixins import ServerlessViewMixin
-from .models import Alert, AlertRule, NotificationChannel, NotificationLog
+from .models import AlertNotification, AlertRule, Notification, NotificationChannel
 from .serializers import (
     AlertAcknowledgeSerializer,
     AlertDetailSerializer,
@@ -162,7 +162,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         user = self.request.user
         company_id = user.company_id
 
-        queryset = Alert.objects.filter(company_id=company_id)
+        queryset = AlertNotification.objects.filter(company_id=company_id)
 
         # Filter by state
         state = self.request.query_params.get("state")
@@ -210,14 +210,14 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         acknowledged_count = 0
         for alert_id in alert_ids:
             try:
-                alert = Alert.objects.get(id=alert_id, company_id=request.user.company_id)
+                alert = AlertNotification.objects.get(id=alert_id, company_id=request.user.company_id)
 
                 # Check permission
                 if AlertPermissions.can_acknowledge_alert(request.user, alert):
                     alert.acknowledge(user_id)
                     acknowledged_count += 1
 
-            except Alert.DoesNotExist:
+            except AlertNotification.DoesNotExist:
                 continue
 
         return Response(
@@ -241,14 +241,14 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         resolved_count = 0
         for alert_id in alert_ids:
             try:
-                alert = Alert.objects.get(id=alert_id, company_id=request.user.company_id)
+                alert = AlertNotification.objects.get(id=alert_id, company_id=request.user.company_id)
 
                 # Check permission
                 if AlertPermissions.can_acknowledge_alert(request.user, alert):
                     alert.resolve(user_id)
                     resolved_count += 1
 
-            except Alert.DoesNotExist:
+            except AlertNotification.DoesNotExist:
                 continue
 
         return Response(
@@ -284,7 +284,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         company_id = request.user.company_id
 
         # Get counts by state
-        alerts = Alert.objects.filter(company_id=company_id)
+        alerts = AlertNotification.objects.filter(company_id=company_id)
 
         total_alerts = alerts.count()
         active_alerts = alerts.filter(state="active").count()

@@ -12,7 +12,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from .authentication import get_auth_headers
-from .models import Alert, AlertRule
+from .models import AlertNotification, AlertRule
 
 logger = logging.getLogger(__name__)
 
@@ -283,7 +283,7 @@ class AlertEngine:
             message = self._generate_alert_message(rule, context)
 
             # Create alert
-            alert = Alert.objects.create(
+            alert = AlertNotification.objects.create(
                 alert_rule=rule,
                 state="active",
                 severity=rule.severity,

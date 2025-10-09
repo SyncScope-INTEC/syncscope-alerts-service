@@ -11,7 +11,7 @@ from django.conf import settings
 from django.utils import timezone
 
 from .alert_engine import alert_engine
-from .models import Alert, AlertRule, NotificationLog
+from .models import AlertNotification, AlertRule, Notification
 from .notification_handlers import send_notification
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ def send_alert_notifications(alert_id: str):
         alert_id: UUID of the alert to send notifications for
     """
     try:
-        alert = Alert.objects.get(id=alert_id)
+        alert = AlertNotification.objects.get(id=alert_id)
 
         # Get notification channels from alert rule
         channels = alert.alert_rule.notification_channels.filter(is_active=True)
@@ -135,7 +135,7 @@ def send_alert_notifications(alert_id: str):
             "failed": failed_count,
         }
 
-    except Alert.DoesNotExist:
+    except AlertNotification.DoesNotExist:
         logger.error(f"Alert {alert_id} not found")
         return {"error": "Alert not found"}
     except Exception as e:
@@ -156,7 +156,7 @@ def retry_failed_notifications():
         max_retries = settings.MAX_RETRY_ATTEMPTS
         retry_delay = timedelta(seconds=settings.NOTIFICATION_RETRY_DELAY)
 
-        failed_notifications = NotificationLog.objects.filter(
+        failed_notifications = Notification.objects.filter(
             status="failed",
             retry_count__lt=max_retries,
             updated_at__lt=timezone.now() - retry_delay,
@@ -207,7 +207,7 @@ def cleanup_old_resolved_alerts():
         cutoff_date = timezone.now() - timedelta(days=retention_days)
 
         # Delete old resolved alerts
-        deleted_count, _ = Alert.objects.filter(
+        deleted_count, _ = AlertNotification.objects.filter(
             state="resolved",
             resolved_at__lt=cutoff_date,
         ).delete()
@@ -266,7 +266,7 @@ def test_notification_channel(channel_id: str, test_alert_data: dict = None):
             return {"success": False, "error": f"Unsupported channel type: {channel.channel_type}"}
 
         # Create a dummy notification log for testing
-        notification_log = NotificationLog(
+        notification_log = Notification(
             alert=None,
             channel=channel,
             status="pending",
