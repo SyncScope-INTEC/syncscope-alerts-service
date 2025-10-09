@@ -264,9 +264,7 @@ class TestAlertViewSet:
         mock_user.company_id = alert_notification.company_id
         mock_perm.return_value = True
 
-        data = {
-            "alert_ids": [str(alert_notification.id)]
-        }
+        data = {"alert_ids": [str(alert_notification.id)]}
 
         response = api_client.post("/api/alerts/acknowledge/", data, format="json")
 
@@ -280,9 +278,7 @@ class TestAlertViewSet:
         mock_user.company_id = alert_notification.company_id
         mock_perm.return_value = True
 
-        data = {
-            "alert_ids": [str(alert_notification.id)]
-        }
+        data = {"alert_ids": [str(alert_notification.id)]}
 
         response = api_client.post("/api/alerts/resolve/", data, format="json")
 
