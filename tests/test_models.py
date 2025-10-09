@@ -2,10 +2,12 @@
 Tests for Alert models
 """
 
+import uuid
+
 import pytest
 from django.utils import timezone
 
-from apps.alerts.models import Alert, AlertRule, NotificationChannel
+from apps.alerts.models import AlertNotification, AlertRule, NotificationChannel
 
 
 @pytest.mark.django_db
@@ -14,81 +16,87 @@ class TestAlertRule:
 
     def test_create_alert_rule(self):
         """Test creating an alert rule"""
+        company_id = uuid.uuid4()
         rule = AlertRule.objects.create(
             name="Test Rule",
             description="Test alert rule",
-            rule_type="threshold_breach",
+            company_id=company_id,
             metric_type="test_metric",
-            condition={"operator": "gt"},
+            condition="greater_than",
             threshold_value=100,
-            severity="high",
-            target_type="user",
-            company_id="00000000-0000-0000-0000-000000000001",
-            created_by="00000000-0000-0000-0000-000000000002",
+            check_interval_minutes=60,
+            is_active=True,
         )
 
         assert rule.name == "Test Rule"
         assert rule.is_active is True
-        assert rule.cooldown_minutes == 60
+        assert rule.check_interval_minutes == 60
+        assert rule.company_id == company_id
 
 
 @pytest.mark.django_db
-class TestAlert:
-    """Tests for Alert model"""
+class TestAlertNotification:
+    """Tests for AlertNotification model"""
 
-    def test_create_alert(self, alert_rule):
-        """Test creating an alert"""
-        alert = Alert.objects.create(
-            alert_rule=alert_rule,
-            state="active",
+    def test_create_alert_notification(self, alert_rule):
+        """Test creating an alert notification"""
+        user_id = uuid.uuid4()
+        alert = AlertNotification.objects.create(
+            rule=alert_rule,
+            triggered_for_user_id=user_id,
             severity="high",
             title="Test Alert",
             message="This is a test alert",
-            target_type="user",
-            target_id="00000000-0000-0000-0000-000000000001",
-            company_id="00000000-0000-0000-0000-000000000001",
+            status="pending",
         )
 
         assert alert.title == "Test Alert"
-        assert alert.state == "active"
+        assert alert.status == "pending"
+        assert alert.severity == "high"
+        assert alert.triggered_for_user_id == user_id
 
-    def test_acknowledge_alert(self, alert):
-        """Test acknowledging an alert"""
-        user_id = "00000000-0000-0000-0000-000000000002"
-        alert.acknowledge(user_id)
+    def test_acknowledge_alert(self, alert_notification):
+        """Test acknowledging an alert notification"""
+        user_id = uuid.uuid4()
+        alert_notification.acknowledge(user_id)
 
-        assert alert.state == "acknowledged"
-        assert alert.acknowledged_by == user_id
-        assert alert.acknowledged_at is not None
+        assert alert_notification.is_read is True
+        assert alert_notification.status == "acknowledged"
+        assert alert_notification.acknowledged_by == user_id
+        assert alert_notification.acknowledged_at is not None
+
+    def test_mark_as_read(self, alert_notification):
+        """Test marking alert notification as read"""
+        alert_notification.mark_as_read()
+
+        assert alert_notification.is_read is True
 
 
 @pytest.fixture
 def alert_rule():
     """Fixture for creating an alert rule"""
+    company_id = uuid.uuid4()
     return AlertRule.objects.create(
         name="Test Rule",
         description="Test alert rule",
-        rule_type="threshold_breach",
+        company_id=company_id,
         metric_type="test_metric",
-        condition={"operator": "gt"},
+        condition="greater_than",
         threshold_value=100,
-        severity="high",
-        target_type="user",
-        company_id="00000000-0000-0000-0000-000000000001",
-        created_by="00000000-0000-0000-0000-000000000002",
+        check_interval_minutes=60,
+        is_active=True,
     )
 
 
 @pytest.fixture
-def alert(alert_rule):
-    """Fixture for creating an alert"""
-    return Alert.objects.create(
-        alert_rule=alert_rule,
-        state="active",
+def alert_notification(alert_rule):
+    """Fixture for creating an alert notification"""
+    user_id = uuid.uuid4()
+    return AlertNotification.objects.create(
+        rule=alert_rule,
+        triggered_for_user_id=user_id,
         severity="high",
         title="Test Alert",
         message="This is a test alert",
-        target_type="user",
-        target_id="00000000-0000-0000-0000-000000000001",
-        company_id="00000000-0000-0000-0000-000000000001",
+        status="pending",
     )
