@@ -126,9 +126,7 @@ class AlertNotificationAdmin(admin.ModelAdmin):
         ),
         (
             "Context",
-            {
-                "fields": ("context_data",)
-            },
+            {"fields": ("context_data",)},
         ),
     )
 
