@@ -401,7 +401,7 @@ class NotificationLogViewSet(ServerlessViewMixin, viewsets.ReadOnlyModelViewSet)
         user = self.request.user
         company_id = user.company_id
 
-        queryset = NotificationLog.objects.filter(alert__company_id=company_id)
+        queryset = Notification.objects.filter(alert__company_id=company_id)
 
         # Filter by status
         status_filter = self.request.query_params.get("status")

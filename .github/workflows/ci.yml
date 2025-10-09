@@ -137,21 +137,32 @@ jobs:
           coverage report > coverage-report.txt
 
           if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
+            echo "🔍 Changed Python files detected"
             BASE_BRANCH="${{ github.base_ref }}"
+            echo "📊 Comparing against base branch: $BASE_BRANCH"
+
             DIFF_COVER_STATUS=0
 
             if git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
-              diff-cover coverage.xml --compare-branch="$BASE_BRANCH" --fail-under=50 || DIFF_COVER_STATUS=$?
+              echo "✅ Using local branch: $BASE_BRANCH"
+              diff-cover coverage.xml --compare-branch="$BASE_BRANCH" --fail-under=80 --show-uncovered || DIFF_COVER_STATUS=$?
+            elif git rev-parse "origin/$BASE_BRANCH" >/dev/null 2>&1; then
+              echo "✅ Using origin branch: origin/$BASE_BRANCH"
+              diff-cover coverage.xml --compare-branch="origin/$BASE_BRANCH" --fail-under=80 --show-uncovered || DIFF_COVER_STATUS=$?
             else
-              diff-cover coverage.xml --compare-branch="HEAD~1" --fail-under=50 || DIFF_COVER_STATUS=$?
+              echo "⚠️ Could not find base branch. Using HEAD~1"
+              diff-cover coverage.xml --compare-branch="HEAD~1" --fail-under=80 --show-uncovered || DIFF_COVER_STATUS=$?
             fi
 
             if [ $DIFF_COVER_STATUS -eq 0 ]; then
+              echo "✅ Differential coverage check PASSED (≥80% threshold)"
               echo "diff_coverage_status=passed" >> $GITHUB_ENV
             else
+              echo "❌ Differential coverage check FAILED (below 80% threshold)"
               echo "diff_coverage_status=failed" >> $GITHUB_ENV
             fi
           else
+            echo "ℹ️  No Python files changed, skipping differential coverage"
             echo "diff_coverage_status=skipped" >> $GITHUB_ENV
           fi
 
@@ -186,32 +197,41 @@ jobs:
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             if [ -f "coverage.xml" ] && [ -f "coverage-report.txt" ]; then
               COVERAGE=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
+              echo "Overall coverage: ${COVERAGE}%"
               echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
               echo "type=differential" >> $GITHUB_OUTPUT
 
               DIFF_STATUS="$diff_coverage_status"
               if [ "$DIFF_STATUS" = "passed" ]; then
                 echo "status=passed" >> $GITHUB_OUTPUT
+                echo "✅ Differential coverage check completed - all modified files meet 80% threshold"
               elif [ "$DIFF_STATUS" = "failed" ]; then
                 echo "status=failed" >> $GITHUB_OUTPUT
+                echo "❌ Differential coverage check failed - some modified files below 80% threshold"
                 exit 1
               else
                 echo "status=passed" >> $GITHUB_OUTPUT
+                echo "✅ No Python files changed, differential coverage not required"
               fi
             else
               echo "coverage=N/A" >> $GITHUB_OUTPUT
               echo "status=passed" >> $GITHUB_OUTPUT
               echo "type=differential" >> $GITHUB_OUTPUT
+              echo "✅ No Python files changed, differential coverage not required"
             fi
           else
             COVERAGE=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
+            echo "Full coverage: ${COVERAGE}%"
             echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
             echo "type=full" >> $GITHUB_OUTPUT
 
-            if ! python -c "import sys; sys.exit(0 if float('${COVERAGE}') >= 50 else 1)"; then
+            if ! python -c "import sys; sys.exit(0 if float('${COVERAGE}') >= 80 else 1)"; then
+              echo "❌ Coverage is ${COVERAGE}%, which is below the required 80% threshold"
+              echo "Please add more tests to improve coverage"
               echo "status=failed" >> $GITHUB_OUTPUT
               exit 1
             else
+              echo "✅ Coverage is ${COVERAGE}%, which meets the 80% threshold"
               echo "status=passed" >> $GITHUB_OUTPUT
             fi
           fi
