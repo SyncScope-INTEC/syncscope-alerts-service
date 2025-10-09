@@ -25,9 +25,7 @@ ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(","
 
 # Add Railway health check domain
 if "RAILWAY_ENVIRONMENT" in os.environ:
-    ALLOWED_HOSTS.extend(
-        ["healthcheck.railway.app", "*.railway.app", "*.up.railway.app"]
-    )
+    ALLOWED_HOSTS.extend(["healthcheck.railway.app", "*.railway.app", "*.up.railway.app"])
 
     # Add the specific Railway service domain if provided
     railway_public_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN")
@@ -139,8 +137,7 @@ if not USE_SQLITE:
     # This alerts service works primarily with the alerts schema
     # But also needs access to other schemas for relationships
     use_alerts_schema = (
-        "test" not in config("DB_NAME", default="").lower()
-        and "test" not in os.environ.get("DATABASE_URL", "").lower()
+        "test" not in config("DB_NAME", default="").lower() and "test" not in os.environ.get("DATABASE_URL", "").lower()
     )
 
     if use_alerts_schema:
@@ -206,9 +203,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # REST Framework configuration
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "apps.alerts.authentication.JWTAuthentication",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("apps.alerts.authentication.JWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
@@ -221,16 +216,12 @@ REST_FRAMEWORK = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = config(
-    "CORS_ALLOWED_ORIGINS", default="http://localhost:3000,http://127.0.0.1:3000"
-).split(",")
+CORS_ALLOWED_ORIGINS = config("CORS_ALLOWED_ORIGINS", default="http://localhost:3000,http://127.0.0.1:3000").split(",")
 
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings
-CSRF_TRUSTED_ORIGINS = config(
-    "CSRF_TRUSTED_ORIGINS", default="http://localhost:3000,http://127.0.0.1:3000"
-).split(",")
+CSRF_TRUSTED_ORIGINS = config("CSRF_TRUSTED_ORIGINS", default="http://localhost:3000,http://127.0.0.1:3000").split(",")
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
@@ -331,7 +322,14 @@ else:
     }
 
 # Celery Configuration
-CELERY_BROKER_URL = config("CELERY_BROKER_URL", default=REDIS_URL if REDIS_URL else f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379', cast=int)}/{config('REDIS_DB', default='2', cast=int)}")
+CELERY_BROKER_URL = config(
+    "CELERY_BROKER_URL",
+    default=(
+        REDIS_URL
+        if REDIS_URL
+        else f"redis://{config('REDIS_HOST', default='localhost')}:{config('REDIS_PORT', default='6379', cast=int)}/{config('REDIS_DB', default='2', cast=int)}"
+    ),
+)
 CELERY_RESULT_BACKEND = config("CELERY_RESULT_BACKEND", default="django-db")
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
@@ -346,24 +344,20 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [REDIS_URL] if REDIS_URL else [(config('REDIS_HOST', default='localhost'), config('REDIS_PORT', default='6379', cast=int))],
+            "hosts": (
+                [REDIS_URL]
+                if REDIS_URL
+                else [(config("REDIS_HOST", default="localhost"), config("REDIS_PORT", default="6379", cast=int))]
+            ),
         },
     },
 }
 
 # Service URLs for HTTP integration
-AUTH_SERVICE_URL = config(
-    "AUTH_SERVICE_URL", default="https://syncscope-auth-service-dev.up.railway.app"
-)
-MONITORING_SERVICE_URL = config(
-    "MONITORING_SERVICE_URL", default="http://localhost:8001"
-)
-MANAGEMENT_SERVICE_URL = config(
-    "MANAGEMENT_SERVICE_URL", default="http://localhost:8002"
-)
-ANALYTICS_SERVICE_URL = config(
-    "ANALYTICS_SERVICE_URL", default="http://localhost:8000"
-)
+AUTH_SERVICE_URL = config("AUTH_SERVICE_URL", default="https://syncscope-auth-service-dev.up.railway.app")
+MONITORING_SERVICE_URL = config("MONITORING_SERVICE_URL", default="http://localhost:8001")
+MANAGEMENT_SERVICE_URL = config("MANAGEMENT_SERVICE_URL", default="http://localhost:8002")
+ANALYTICS_SERVICE_URL = config("ANALYTICS_SERVICE_URL", default="http://localhost:8000")
 
 # Alerts Configuration
 ALERT_EVALUATION_INTERVAL = config("ALERT_EVALUATION_INTERVAL", default=60, cast=int)  # seconds

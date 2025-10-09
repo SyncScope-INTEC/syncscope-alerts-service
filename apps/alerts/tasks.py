@@ -49,9 +49,7 @@ def evaluate_all_active_alert_rules():
                 logger.error(f"Error evaluating rule {rule.id}: {e}", exc_info=True)
                 continue
 
-        logger.info(
-            f"Alert evaluation complete: {evaluated_count} rules evaluated, {triggered_count} alerts triggered"
-        )
+        logger.info(f"Alert evaluation complete: {evaluated_count} rules evaluated, {triggered_count} alerts triggered")
 
         return {
             "evaluated": evaluated_count,
@@ -130,9 +128,7 @@ def send_alert_notifications(alert_id: str):
                 logger.error(f"Error sending notification via {channel.name}: {e}", exc_info=True)
                 failed_count += 1
 
-        logger.info(
-            f"Notifications sent for alert {alert_id}: {sent_count} successful, {failed_count} failed"
-        )
+        logger.info(f"Notifications sent for alert {alert_id}: {sent_count} successful, {failed_count} failed")
 
         return {
             "sent": sent_count,
@@ -186,9 +182,7 @@ def retry_failed_notifications():
                 logger.error(f"Error retrying notification {notification_log.id}: {e}", exc_info=True)
                 continue
 
-        logger.info(
-            f"Notification retry complete: {retry_count} retried, {success_count} successful"
-        )
+        logger.info(f"Notification retry complete: {retry_count} retried, {success_count} successful")
 
         return {
             "retried": retry_count,
@@ -254,10 +248,14 @@ def test_notification_channel(channel_id: str, test_alert_data: dict = None):
                 state="active",
                 triggered_at=timezone.now(),
             )
-            alert.alert_rule = type("obj", (object,), {
-                "name": "Test Rule",
-                "rule_type": "test",
-            })
+            alert.alert_rule = type(
+                "obj",
+                (object,),
+                {
+                    "name": "Test Rule",
+                    "rule_type": "test",
+                },
+            )
 
         # Send test notification
         from .notification_handlers import NOTIFICATION_HANDLERS

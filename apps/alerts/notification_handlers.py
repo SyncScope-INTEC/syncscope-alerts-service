@@ -8,8 +8,8 @@ import logging
 from abc import ABC, abstractmethod
 
 import requests
-from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string

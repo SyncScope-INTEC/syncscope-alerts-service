@@ -177,9 +177,7 @@ class NotificationChannelAdmin(admin.ModelAdmin):
         ),
         (
             "Settings",
-            {
-                "fields": ("is_active",)
-            },
+            {"fields": ("is_active",)},
         ),
         (
             "Metadata",

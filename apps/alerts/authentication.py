@@ -5,11 +5,10 @@ Validates JWT tokens issued by the Auth Service
 
 import logging
 
-from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
-
 import jwt
 import requests
+from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import authentication, exceptions
 
 logger = logging.getLogger(__name__)

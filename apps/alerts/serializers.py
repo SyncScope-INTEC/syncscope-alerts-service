@@ -11,9 +11,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
     """Serializer for AlertRule model"""
 
     notification_channels = serializers.PrimaryKeyRelatedField(
-        many=True,
-        queryset=NotificationChannel.objects.all(),
-        required=False
+        many=True, queryset=NotificationChannel.objects.all(), required=False
     )
 
     class Meta:
@@ -139,20 +137,14 @@ class AlertAcknowledgeSerializer(serializers.Serializer):
     """Serializer for acknowledging alerts"""
 
     alert_ids = serializers.ListField(
-        child=serializers.UUIDField(),
-        required=True,
-        help_text="List of alert IDs to acknowledge"
+        child=serializers.UUIDField(), required=True, help_text="List of alert IDs to acknowledge"
     )
 
 
 class AlertResolveSerializer(serializers.Serializer):
     """Serializer for resolving alerts"""
 
-    alert_ids = serializers.ListField(
-        child=serializers.UUIDField(),
-        required=True,
-        help_text="List of alert IDs to resolve"
-    )
+    alert_ids = serializers.ListField(child=serializers.UUIDField(), required=True, help_text="List of alert IDs to resolve")
 
 
 class NotificationChannelSerializer(serializers.ModelSerializer):
@@ -250,7 +242,4 @@ class AlertRuleTestSerializer(serializers.Serializer):
     """Serializer for testing alert rules"""
 
     rule_id = serializers.UUIDField(required=True)
-    test_data = serializers.JSONField(
-        required=False,
-        help_text="Optional test data to simulate metric values"
-    )
+    test_data = serializers.JSONField(required=False, help_text="Optional test data to simulate metric values")

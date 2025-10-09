@@ -90,9 +90,7 @@ class AlertRule(RetryableModelMixin, models.Model):
         """Get the last time an alert was triggered for this rule"""
         alerts = AlertNotification.objects.filter(rule=self)
         if target_id:
-            alerts = alerts.filter(
-                models.Q(triggered_for_user_id=target_id) | models.Q(triggered_for_team_id=target_id)
-            )
+            alerts = alerts.filter(models.Q(triggered_for_user_id=target_id) | models.Q(triggered_for_team_id=target_id))
 
         last_alert = alerts.order_by("-triggered_at").first()
         return last_alert.triggered_at if last_alert else None
@@ -104,6 +102,7 @@ class AlertRule(RetryableModelMixin, models.Model):
             return False
 
         from datetime import timedelta
+
         cooldown_period = timedelta(minutes=self.check_interval_minutes)
         return timezone.now() < (last_alert_time + cooldown_period)
 
@@ -115,12 +114,7 @@ class AlertNotification(RetryableModelMixin, models.Model):
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    rule = models.ForeignKey(
-        AlertRule,
-        on_delete=models.CASCADE,
-        related_name="notifications",
-        db_column="rule_id"
-    )
+    rule = models.ForeignKey(AlertRule, on_delete=models.CASCADE, related_name="notifications", db_column="rule_id")
     triggered_for_user_id = models.UUIDField(null=True, blank=True)
     triggered_for_team_id = models.UUIDField(null=True, blank=True)
     severity = models.CharField(max_length=20)
@@ -190,12 +184,7 @@ class Notification(RetryableModelMixin, models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user_id = models.UUIDField()
-    alert = models.ForeignKey(
-        AlertNotification,
-        on_delete=models.CASCADE,
-        related_name="notifications",
-        db_column="alert_id"
-    )
+    alert = models.ForeignKey(AlertNotification, on_delete=models.CASCADE, related_name="notifications", db_column="alert_id")
     notification_type = models.CharField(max_length=20)
     subject = models.CharField(max_length=200, blank=True, null=True)
     message = models.TextField()

@@ -56,9 +56,7 @@ class AlertEngine:
             condition = rule.condition
             operator = condition.get("operator")
 
-            should_trigger = self._evaluate_condition(
-                operator, current_value, rule, condition, metadata
-            )
+            should_trigger = self._evaluate_condition(operator, current_value, rule, condition, metadata)
 
             context = {
                 "current_value": current_value,
@@ -167,6 +165,7 @@ class AlertEngine:
 
             # Add safe math operations
             import math
+
             safe_context = {
                 "abs": abs,
                 "min": min,
@@ -300,6 +299,7 @@ class AlertEngine:
 
             # Trigger notifications (async)
             from .tasks import send_alert_notifications
+
             send_alert_notifications.delay(str(alert.id))
 
             return alert

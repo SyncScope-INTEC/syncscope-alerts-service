@@ -6,7 +6,6 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
-
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -27,9 +26,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("alerts/", include("apps.alerts.urls")),
     # Health check endpoints
-    path(
-        "health/", simple_health_check, name="health_check"
-    ),  # Ultra-simple health check for Railway
+    path("health/", simple_health_check, name="health_check"),  # Ultra-simple health check for Railway
     path("health/detailed/", health_check, name="detailed_health_check"),
     path("health/ready/", readiness_check, name="readiness_check"),
     path("health/live/", liveness_check, name="liveness_check"),

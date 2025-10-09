@@ -300,17 +300,11 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 
         # Get counts by type
         alerts_by_type = dict(
-            alerts.values("alert_rule__rule_type")
-            .annotate(count=Count("id"))
-            .values_list("alert_rule__rule_type", "count")
+            alerts.values("alert_rule__rule_type").annotate(count=Count("id")).values_list("alert_rule__rule_type", "count")
         )
 
         # Get counts by target type
-        alerts_by_target = dict(
-            alerts.values("target_type")
-            .annotate(count=Count("id"))
-            .values_list("target_type", "count")
-        )
+        alerts_by_target = dict(alerts.values("target_type").annotate(count=Count("id")).values_list("target_type", "count"))
 
         stats = {
             "total_alerts": total_alerts,
@@ -362,9 +356,7 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Create a new notification channel"""
         # Check permission
-        if not AlertPermissions.can_manage_notification_channels(
-            request.user, request.user.company_id
-        ):
+        if not AlertPermissions.can_manage_notification_channels(request.user, request.user.company_id):
             return Response(
                 {"error": "Permission denied"},
                 status=status.HTTP_403_FORBIDDEN,

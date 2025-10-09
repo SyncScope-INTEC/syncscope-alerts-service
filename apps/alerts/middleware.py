@@ -31,15 +31,11 @@ class SecurityHeadersMiddleware:
 
         # HSTS for HTTPS
         if request.is_secure():
-            response["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains"
-            )
+            response["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
         # CSP for API responses
         if request.path.startswith("/alerts/"):
-            response["Content-Security-Policy"] = (
-                "default-src 'none'; script-src 'none'; object-src 'none'"
-            )
+            response["Content-Security-Policy"] = "default-src 'none'; script-src 'none'; object-src 'none'"
 
         return response
 
@@ -132,9 +128,7 @@ class RequestLoggingMiddleware:
         start_time = time.time()
 
         # Log request
-        logger.info(
-            f"Alerts Request: {request.method} {request.path} from {self.get_client_ip(request)}"
-        )
+        logger.info(f"Alerts Request: {request.method} {request.path} from {self.get_client_ip(request)}")
 
         response = self.get_response(request)
 
@@ -144,9 +138,7 @@ class RequestLoggingMiddleware:
 
         # Log slow requests
         if duration > 5.0:  # Log requests taking more than 5 seconds
-            logger.warning(
-                f"Slow alerts request: {request.method} {request.path} took {duration:.3f}s"
-            )
+            logger.warning(f"Slow alerts request: {request.method} {request.path} took {duration:.3f}s")
 
         return response
 
@@ -178,9 +170,7 @@ class AlertsPerformanceMiddleware:
 
             try:
                 # Get existing metrics
-                metrics = cache.get(
-                    cache_key, {"total_requests": 0, "total_time": 0, "avg_time": 0}
-                )
+                metrics = cache.get(cache_key, {"total_requests": 0, "total_time": 0, "avg_time": 0})
 
                 # Update metrics
                 metrics["total_requests"] += 1

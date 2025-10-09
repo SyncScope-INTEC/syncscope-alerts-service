@@ -5,8 +5,8 @@ WebSocket Consumers for real-time alert notifications
 import json
 import logging
 
-from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,7 @@ class AlertConsumer(AsyncWebsocketConsumer):
             self.group_name = f"user_{self.user_id}_alerts"
 
             # Join user's alert group
-            await self.channel_layer.group_add(
-                self.group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
 
             # Accept connection
             await self.accept()
@@ -44,10 +41,14 @@ class AlertConsumer(AsyncWebsocketConsumer):
             logger.info(f"WebSocket connected for user {self.user_id}")
 
             # Send connection confirmation
-            await self.send(text_data=json.dumps({
-                "type": "connection_established",
-                "message": "Connected to alert notifications",
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "connection_established",
+                        "message": "Connected to alert notifications",
+                    }
+                )
+            )
 
         except Exception as e:
             logger.error(f"Error in WebSocket connect: {e}", exc_info=True)
@@ -58,10 +59,7 @@ class AlertConsumer(AsyncWebsocketConsumer):
         try:
             # Leave user's alert group
             if hasattr(self, "group_name"):
-                await self.channel_layer.group_discard(
-                    self.group_name,
-                    self.channel_name
-                )
+                await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
             logger.info(f"WebSocket disconnected for user {getattr(self, 'user_id', 'unknown')}")
 
@@ -76,9 +74,13 @@ class AlertConsumer(AsyncWebsocketConsumer):
 
             if message_type == "ping":
                 # Respond to ping
-                await self.send(text_data=json.dumps({
-                    "type": "pong",
-                }))
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "pong",
+                        }
+                    )
+                )
 
             elif message_type == "subscribe_company":
                 # Subscribe to company-wide alerts
@@ -115,16 +117,17 @@ class AlertConsumer(AsyncWebsocketConsumer):
 
             if has_access:
                 group_name = f"company_{company_id}_alerts"
-                await self.channel_layer.group_add(
-                    group_name,
-                    self.channel_name
-                )
+                await self.channel_layer.group_add(group_name, self.channel_name)
 
-                await self.send(text_data=json.dumps({
-                    "type": "subscribed",
-                    "group_type": "company",
-                    "group_id": company_id,
-                }))
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "subscribed",
+                            "group_type": "company",
+                            "group_id": company_id,
+                        }
+                    )
+                )
 
                 logger.info(f"User {self.user_id} subscribed to company {company_id} alerts")
 
@@ -139,16 +142,17 @@ class AlertConsumer(AsyncWebsocketConsumer):
 
             if has_access:
                 group_name = f"team_{team_id}_alerts"
-                await self.channel_layer.group_add(
-                    group_name,
-                    self.channel_name
-                )
+                await self.channel_layer.group_add(group_name, self.channel_name)
 
-                await self.send(text_data=json.dumps({
-                    "type": "subscribed",
-                    "group_type": "team",
-                    "group_id": team_id,
-                }))
+                await self.send(
+                    text_data=json.dumps(
+                        {
+                            "type": "subscribed",
+                            "group_type": "team",
+                            "group_id": team_id,
+                        }
+                    )
+                )
 
                 logger.info(f"User {self.user_id} subscribed to team {team_id} alerts")
 
@@ -159,16 +163,17 @@ class AlertConsumer(AsyncWebsocketConsumer):
         """Unsubscribe from a specific group"""
         try:
             group_name = f"{group_type}_{group_id}_alerts"
-            await self.channel_layer.group_discard(
-                group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_discard(group_name, self.channel_name)
 
-            await self.send(text_data=json.dumps({
-                "type": "unsubscribed",
-                "group_type": group_type,
-                "group_id": group_id,
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "unsubscribed",
+                        "group_type": group_type,
+                        "group_id": group_id,
+                    }
+                )
+            )
 
         except Exception as e:
             logger.error(f"Error unsubscribing from group: {e}", exc_info=True)
@@ -251,19 +256,20 @@ class CompanyAlertConsumer(AsyncWebsocketConsumer):
 
             # Join company alert group
             self.group_name = f"company_{self.company_id}_alerts"
-            await self.channel_layer.group_add(
-                self.group_name,
-                self.channel_name
-            )
+            await self.channel_layer.group_add(self.group_name, self.channel_name)
 
             await self.accept()
 
             logger.info(f"Admin {self.user.id} connected to company {self.company_id} alerts")
 
-            await self.send(text_data=json.dumps({
-                "type": "connection_established",
-                "message": f"Connected to company {self.company_id} alert monitoring",
-            }))
+            await self.send(
+                text_data=json.dumps(
+                    {
+                        "type": "connection_established",
+                        "message": f"Connected to company {self.company_id} alert monitoring",
+                    }
+                )
+            )
 
         except Exception as e:
             logger.error(f"Error in company alert WebSocket connect: {e}", exc_info=True)
@@ -273,10 +279,7 @@ class CompanyAlertConsumer(AsyncWebsocketConsumer):
         """Handle WebSocket disconnection"""
         try:
             if hasattr(self, "group_name"):
-                await self.channel_layer.group_discard(
-                    self.group_name,
-                    self.channel_name
-                )
+                await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
         except Exception as e:
             logger.error(f"Error in company alert WebSocket disconnect: {e}", exc_info=True)
