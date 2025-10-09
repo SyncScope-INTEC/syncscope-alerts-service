@@ -4,7 +4,7 @@ Django Admin configuration for Alerts Service
 
 from django.contrib import admin
 
-from .models import Alert, AlertRule, NotificationChannel, NotificationLog
+from .models import AlertNotification, AlertRule, Notification, NotificationChannel
 
 
 @admin.register(AlertRule)
@@ -13,13 +13,12 @@ class AlertRuleAdmin(admin.ModelAdmin):
 
     list_display = [
         "name",
-        "rule_type",
-        "severity",
-        "target_type",
+        "metric_type",
+        "condition",
         "is_active",
         "created_at",
     ]
-    list_filter = ["rule_type", "severity", "target_type", "is_active", "created_at"]
+    list_filter = ["metric_type", "condition", "is_active", "created_at"]
     search_fields = ["name", "description", "metric_type"]
     readonly_fields = ["id", "created_at", "updated_at"]
     fieldsets = (
@@ -30,7 +29,6 @@ class AlertRuleAdmin(admin.ModelAdmin):
                     "id",
                     "name",
                     "description",
-                    "rule_type",
                     "metric_type",
                 )
             },
@@ -41,16 +39,6 @@ class AlertRuleAdmin(admin.ModelAdmin):
                 "fields": (
                     "condition",
                     "threshold_value",
-                    "severity",
-                )
-            },
-        ),
-        (
-            "Target",
-            {
-                "fields": (
-                    "target_type",
-                    "target_id",
                 )
             },
         ),
@@ -59,7 +47,7 @@ class AlertRuleAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "is_active",
-                    "cooldown_minutes",
+                    "check_interval_minutes",
                 )
             },
         ),
@@ -68,7 +56,6 @@ class AlertRuleAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "company_id",
-                    "created_by",
                     "created_at",
                     "updated_at",
                 )
@@ -77,27 +64,24 @@ class AlertRuleAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Alert)
-class AlertAdmin(admin.ModelAdmin):
-    """Admin interface for Alert"""
+@admin.register(AlertNotification)
+class AlertNotificationAdmin(admin.ModelAdmin):
+    """Admin interface for AlertNotification"""
 
     list_display = [
         "title",
-        "alert_rule",
-        "state",
+        "rule",
         "severity",
+        "status",
         "triggered_at",
-        "company_id",
+        "is_read",
     ]
-    list_filter = ["state", "severity", "triggered_at"]
+    list_filter = ["severity", "status", "is_read", "triggered_at"]
     search_fields = ["title", "message"]
     readonly_fields = [
         "id",
         "triggered_at",
         "acknowledged_at",
-        "resolved_at",
-        "created_at",
-        "updated_at",
     ]
     fieldsets = (
         (
@@ -105,9 +89,10 @@ class AlertAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "id",
-                    "alert_rule",
+                    "rule",
                     "title",
                     "message",
+                    "severity",
                 )
             },
         ),
@@ -115,8 +100,8 @@ class AlertAdmin(admin.ModelAdmin):
             "Status",
             {
                 "fields": (
-                    "state",
-                    "severity",
+                    "status",
+                    "is_read",
                 )
             },
         ),
@@ -124,8 +109,8 @@ class AlertAdmin(admin.ModelAdmin):
             "Target",
             {
                 "fields": (
-                    "target_type",
-                    "target_id",
+                    "triggered_for_user_id",
+                    "triggered_for_team_id",
                 )
             },
         ),
@@ -136,20 +121,13 @@ class AlertAdmin(admin.ModelAdmin):
                     "triggered_at",
                     "acknowledged_at",
                     "acknowledged_by",
-                    "resolved_at",
-                    "resolved_by",
                 )
             },
         ),
         (
-            "Metadata",
+            "Context",
             {
-                "fields": (
-                    "metadata",
-                    "company_id",
-                    "created_at",
-                    "updated_at",
-                )
+                "fields": ("context_data",)
             },
         ),
     )
@@ -159,10 +137,10 @@ class AlertAdmin(admin.ModelAdmin):
 class NotificationChannelAdmin(admin.ModelAdmin):
     """Admin interface for NotificationChannel"""
 
-    list_display = ["name", "channel_type", "is_active", "company_id", "created_at"]
-    list_filter = ["channel_type", "is_active", "created_at"]
+    list_display = ["name", "type", "is_active", "company_id", "created_at"]
+    list_filter = ["type", "is_active", "created_at"]
     search_fields = ["name"]
-    readonly_fields = ["id", "created_at", "updated_at"]
+    readonly_fields = ["id", "created_at"]
     fieldsets = (
         (
             "Channel Information",
@@ -170,7 +148,7 @@ class NotificationChannelAdmin(admin.ModelAdmin):
                 "fields": (
                     "id",
                     "name",
-                    "channel_type",
+                    "type",
                     "config",
                 )
             },
@@ -184,38 +162,46 @@ class NotificationChannelAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "company_id",
-                    "created_by",
                     "created_at",
-                    "updated_at",
                 )
             },
         ),
     )
 
 
-@admin.register(NotificationLog)
-class NotificationLogAdmin(admin.ModelAdmin):
-    """Admin interface for NotificationLog"""
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    """Admin interface for Notification"""
 
     list_display = [
+        "user_id",
         "alert",
-        "channel",
+        "notification_type",
         "status",
         "sent_at",
-        "retry_count",
         "created_at",
     ]
-    list_filter = ["status", "created_at"]
-    search_fields = ["alert__title", "channel__name", "error_message"]
-    readonly_fields = ["id", "sent_at", "created_at", "updated_at"]
+    list_filter = ["notification_type", "status", "created_at"]
+    search_fields = ["subject", "message", "user_id"]
+    readonly_fields = ["id", "sent_at", "read_at", "created_at"]
     fieldsets = (
         (
             "Notification Information",
             {
                 "fields": (
                     "id",
+                    "user_id",
                     "alert",
-                    "channel",
+                    "notification_type",
+                )
+            },
+        ),
+        (
+            "Content",
+            {
+                "fields": (
+                    "subject",
+                    "message",
                 )
             },
         ),
@@ -225,8 +211,7 @@ class NotificationLogAdmin(admin.ModelAdmin):
                 "fields": (
                     "status",
                     "sent_at",
-                    "error_message",
-                    "retry_count",
+                    "read_at",
                 )
             },
         ),
@@ -234,9 +219,8 @@ class NotificationLogAdmin(admin.ModelAdmin):
             "Metadata",
             {
                 "fields": (
-                    "metadata",
+                    "delivery_metadata",
                     "created_at",
-                    "updated_at",
                 )
             },
         ),
