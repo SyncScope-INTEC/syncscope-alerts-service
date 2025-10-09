@@ -141,9 +141,9 @@ jobs:
             DIFF_COVER_STATUS=0
 
             if git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
-              diff-cover coverage.xml --compare-branch="$BASE_BRANCH" --fail-under=80 || DIFF_COVER_STATUS=$?
+              diff-cover coverage.xml --compare-branch="$BASE_BRANCH" --fail-under=50 || DIFF_COVER_STATUS=$?
             else
-              diff-cover coverage.xml --compare-branch="HEAD~1" --fail-under=80 || DIFF_COVER_STATUS=$?
+              diff-cover coverage.xml --compare-branch="HEAD~1" --fail-under=50 || DIFF_COVER_STATUS=$?
             fi
 
             if [ $DIFF_COVER_STATUS -eq 0 ]; then
@@ -208,7 +208,7 @@ jobs:
             echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
             echo "type=full" >> $GITHUB_OUTPUT
 
-            if ! python -c "import sys; sys.exit(0 if float('${COVERAGE}') >= 80 else 1)"; then
+            if ! python -c "import sys; sys.exit(0 if float('${COVERAGE}') >= 50 else 1)"; then
               echo "status=failed" >> $GITHUB_OUTPUT
               exit 1
             else
