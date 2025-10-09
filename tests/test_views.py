@@ -71,7 +71,7 @@ def notification_channel(company_id):
     return NotificationChannel.objects.create(
         name="Test Channel",
         type="email",
-        config={"email": "test@example.com"},
+        config={"recipients": ["test@example.com"]},
         is_active=True,
         company_id=company_id,
     )
@@ -116,7 +116,7 @@ class TestAlertRuleViewSet:
             "name": "New Test Rule",
             "description": "New alert rule",
             "metric_type": "cpu_usage",
-            "condition": {"operator": "gt", "value": 80},
+            "condition": "greater_than",
             "threshold_value": 80,
             "check_interval_minutes": 30,
             "is_active": True,
@@ -133,7 +133,7 @@ class TestAlertRuleViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_rule.company_id
 
-        response = api_client.get(f"/api/rules/{alert_rule.id}/")
+        response = api_client.get(f"/alerts/rules/{alert_rule.id}/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == str(alert_rule.id)
@@ -154,7 +154,7 @@ class TestAlertRuleViewSet:
             "is_active": alert_rule.is_active,
         }
 
-        response = api_client.put(f"/api/rules/{alert_rule.id}/", data, format="json")
+        response = api_client.put(f"/alerts/rules/{alert_rule.id}/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["name"] == "Updated Rule Name"
@@ -164,7 +164,7 @@ class TestAlertRuleViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_rule.company_id
 
-        response = api_client.delete(f"/api/rules/{alert_rule.id}/")
+        response = api_client.delete(f"/alerts/rules/{alert_rule.id}/")
 
         assert response.status_code == status.HTTP_204_NO_CONTENT
         assert not AlertRule.objects.filter(id=alert_rule.id).exists()
@@ -176,7 +176,7 @@ class TestAlertRuleViewSet:
         mock_user.company_id = alert_rule.company_id
         mock_task.return_value.id = "test-task-id"
 
-        response = api_client.post(f"/api/rules/{alert_rule.id}/test/", {"test_data": {}}, format="json")
+        response = api_client.post(f"/alerts/rules/{alert_rule.id}/test/", {"test_data": {}}, format="json")
 
         assert response.status_code == status.HTTP_202_ACCEPTED
         assert "task_id" in response.data
@@ -189,7 +189,7 @@ class TestAlertRuleViewSet:
         alert_rule.is_active = False
         alert_rule.save()
 
-        response = api_client.post(f"/api/rules/{alert_rule.id}/activate/")
+        response = api_client.post(f"/alerts/rules/{alert_rule.id}/activate/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["is_active"] is True
@@ -202,7 +202,7 @@ class TestAlertRuleViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_rule.company_id
 
-        response = api_client.post(f"/api/rules/{alert_rule.id}/deactivate/")
+        response = api_client.post(f"/alerts/rules/{alert_rule.id}/deactivate/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["is_active"] is False
@@ -226,7 +226,7 @@ class TestAlertRuleViewSet:
             is_active=True,
         )
 
-        response = api_client.get("/api/rules/?rule_type=metric")
+        response = api_client.get("/alerts/rules/?rule_type=metric")
 
         # Should work without errors (filtering logic may vary)
         assert response.status_code == status.HTTP_200_OK
@@ -363,7 +363,7 @@ class TestNotificationChannelViewSet:
         data = {
             "name": "New Email Channel",
             "type": "email",
-            "config": {"email": "notifications@example.com"},
+            "config": {"recipients": ["notifications@example.com"]},
             "is_active": True,
         }
 
@@ -382,7 +382,7 @@ class TestNotificationChannelViewSet:
         data = {
             "name": "New Channel",
             "type": "email",
-            "config": {"email": "test@example.com"},
+            "config": {"recipients": ["test@example.com"]},
         }
 
         response = api_client.post("/alerts/channels/", data, format="json")

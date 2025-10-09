@@ -150,6 +150,17 @@ class AlertNotification(RetryableModelMixin, models.Model):
         self.is_read = True
         self.save()
 
+    def resolve(self, user_id):
+        """Resolve this alert notification"""
+        self.status = "resolved"
+        self.is_read = True
+        self.save()
+
+    def mute(self):
+        """Mute this alert notification"""
+        self.status = "muted"
+        self.save()
+
 
 class NotificationChannel(RetryableModelMixin, models.Model):
     """
