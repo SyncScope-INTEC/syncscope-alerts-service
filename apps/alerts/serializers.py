@@ -50,6 +50,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
 
 class AlertRuleDetailSerializer(AlertRuleSerializer):
     """Detailed serializer for AlertRule"""
+
     pass
 
 
