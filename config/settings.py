@@ -431,7 +431,7 @@ SPECTACULAR_SETTINGS = {
             "description": "Service health check endpoints",
         },
     ],
-    # Swagger UI settings
+    # Swagger UI
     "SWAGGER_UI_SETTINGS": {
         "deepLinking": True,
         "persistAuthorization": True,
