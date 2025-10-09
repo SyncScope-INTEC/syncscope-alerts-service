@@ -94,10 +94,9 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Create a new alert rule"""
-        # Set company_id and created_by from authenticated user
+        # Set company_id from authenticated user
         data = request.data.copy()
         data["company_id"] = str(request.user.company_id)
-        data["created_by"] = str(request.user.id)
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -162,32 +161,23 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         user = self.request.user
         company_id = user.company_id
 
-        queryset = AlertNotification.objects.filter(company_id=company_id)
+        # Filter by company through the related alert rule
+        queryset = AlertNotification.objects.filter(rule__company_id=company_id)
 
-        # Filter by state
-        state = self.request.query_params.get("state")
-        if state:
-            queryset = queryset.filter(state=state)
+        # Filter by status
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
 
         # Filter by severity
         severity = self.request.query_params.get("severity")
         if severity:
             queryset = queryset.filter(severity=severity)
 
-        # Filter by target type
-        target_type = self.request.query_params.get("target_type")
-        if target_type:
-            queryset = queryset.filter(target_type=target_type)
-
-        # Filter by target ID
-        target_id = self.request.query_params.get("target_id")
-        if target_id:
-            queryset = queryset.filter(target_id=target_id)
-
         # Filter by alert rule
         rule_id = self.request.query_params.get("rule_id")
         if rule_id:
-            queryset = queryset.filter(alert_rule_id=rule_id)
+            queryset = queryset.filter(rule_id=rule_id)
 
         return queryset.order_by("-triggered_at")
 
@@ -210,7 +200,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         acknowledged_count = 0
         for alert_id in alert_ids:
             try:
-                alert = AlertNotification.objects.get(id=alert_id, company_id=request.user.company_id)
+                alert = AlertNotification.objects.get(id=alert_id, rule__company_id=request.user.company_id)
 
                 # Check permission
                 if AlertPermissions.can_acknowledge_alert(request.user, alert):
@@ -241,7 +231,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         resolved_count = 0
         for alert_id in alert_ids:
             try:
-                alert = AlertNotification.objects.get(id=alert_id, company_id=request.user.company_id)
+                alert = AlertNotification.objects.get(id=alert_id, rule__company_id=request.user.company_id)
 
                 # Check permission
                 if AlertPermissions.can_acknowledge_alert(request.user, alert):
@@ -283,14 +273,14 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         """Get alert statistics for the company"""
         company_id = request.user.company_id
 
-        # Get counts by state
-        alerts = AlertNotification.objects.filter(company_id=company_id)
+        # Get counts by filtering through rule
+        alerts = AlertNotification.objects.filter(rule__company_id=company_id)
 
         total_alerts = alerts.count()
-        active_alerts = alerts.filter(state="active").count()
-        acknowledged_alerts = alerts.filter(state="acknowledged").count()
-        resolved_alerts = alerts.filter(state="resolved").count()
-        muted_alerts = alerts.filter(state="muted").count()
+        active_alerts = alerts.filter(status="pending").count()
+        acknowledged_alerts = alerts.filter(status="acknowledged").count()
+        resolved_alerts = alerts.filter(status="resolved").count()
+        muted_alerts = alerts.filter(status="muted").count()
 
         # Get counts by severity
         critical_alerts = alerts.filter(severity="critical").count()
@@ -298,13 +288,15 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         medium_alerts = alerts.filter(severity="medium").count()
         low_alerts = alerts.filter(severity="low").count()
 
-        # Get counts by type
+        # Get counts by metric type from rule
         alerts_by_type = dict(
-            alerts.values("alert_rule__rule_type").annotate(count=Count("id")).values_list("alert_rule__rule_type", "count")
+            alerts.values("rule__metric_type").annotate(count=Count("id")).values_list("rule__metric_type", "count")
         )
 
-        # Get counts by target type
-        alerts_by_target = dict(alerts.values("target_type").annotate(count=Count("id")).values_list("target_type", "count"))
+        # Get counts by triggered user vs team
+        user_alerts = alerts.filter(triggered_for_user_id__isnull=False).count()
+        team_alerts = alerts.filter(triggered_for_team_id__isnull=False).count()
+        alerts_by_target = {"user": user_alerts, "team": team_alerts}
 
         stats = {
             "total_alerts": total_alerts,
@@ -342,9 +334,9 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         queryset = NotificationChannel.objects.filter(company_id=company_id)
 
         # Filter by channel type
-        channel_type = self.request.query_params.get("channel_type")
+        channel_type = self.request.query_params.get("type")
         if channel_type:
-            queryset = queryset.filter(channel_type=channel_type)
+            queryset = queryset.filter(type=channel_type)
 
         # Filter by active status
         is_active = self.request.query_params.get("is_active")
@@ -362,10 +354,9 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Set company_id and created_by from authenticated user
+        # Set company_id from authenticated user
         data = request.data.copy()
         data["company_id"] = str(request.user.company_id)
-        data["created_by"] = str(request.user.id)
 
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -401,7 +392,7 @@ class NotificationLogViewSet(ServerlessViewMixin, viewsets.ReadOnlyModelViewSet)
         user = self.request.user
         company_id = user.company_id
 
-        queryset = Notification.objects.filter(alert__company_id=company_id)
+        queryset = Notification.objects.filter(alert__rule__company_id=company_id)
 
         # Filter by status
         status_filter = self.request.query_params.get("status")

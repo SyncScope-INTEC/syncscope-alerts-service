@@ -83,14 +83,13 @@ class TestAlertRuleSerializer:
             result = serializer.validate_condition(condition)
             assert result == condition
 
-    def test_validate_condition_invalid_type(self):
-        """Test condition validation with invalid type"""
+    def test_validate_condition_string(self):
+        """Test condition validation with string"""
         serializer = AlertRuleSerializer()
 
-        with pytest.raises(ValidationError) as exc:
-            serializer.validate_condition("invalid")
-
-        assert "Condition must be a JSON object" in str(exc.value)
+        # Strings are now valid (CharField in model)
+        result = serializer.validate_condition("greater_than")
+        assert result == "greater_than"
 
     def test_validate_condition_missing_operator(self):
         """Test condition validation without operator"""

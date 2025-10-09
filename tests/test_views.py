@@ -44,7 +44,7 @@ def alert_rule(company_id):
         description="Test alert rule",
         company_id=company_id,
         metric_type="test_metric",
-        condition={"operator": "gt", "value": 100},
+        condition="greater_than",
         threshold_value=100,
         check_interval_minutes=60,
         is_active=True,
