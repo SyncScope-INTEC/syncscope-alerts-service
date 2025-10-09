@@ -1,0 +1,267 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [dev, qa, prod]
+  pull_request:
+    branches: [dev, qa, prod]
+
+env:
+  PYTHON_VERSION: "3.13"
+
+# Add permissions for the workflow
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: test_syncscope
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git for diff coverage
+        if: github.event_name == 'pull_request'
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          BASE_BRANCH="${{ github.base_ref }}"
+          echo "Base branch: $BASE_BRANCH"
+          git fetch origin "$BASE_BRANCH:$BASE_BRANCH" || echo "Branch $BASE_BRANCH already exists"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Set up test environment
+        env:
+          SECRET_KEY: "test-secret-key-for-ci"
+          DEBUG: "True"
+          DB_NAME: "test_syncscope"
+          DB_USER: "postgres"
+          DB_PASSWORD: "postgres"
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          REDIS_URL: "redis://localhost:6379/0"
+          JWT_SECRET_KEY: "test-jwt-secret"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
+          CORS_ALLOWED_ORIGINS: "http://localhost:3000"
+          AUTH_SERVICE_URL: "http://localhost:8001"
+          MONITORING_SERVICE_URL: "http://localhost:8002"
+          ANALYTICS_SERVICE_URL: "http://localhost:8004"
+          MANAGEMENT_SERVICE_URL: "http://localhost:8005"
+          API_GATEWAY_URL: "http://localhost:8000"
+          FRONTEND_URL: "http://localhost:3000"
+        run: |
+          python manage.py check --settings=config.test_settings
+
+      - name: Run linting
+        run: |
+          black --check --diff .
+          isort --check-only --diff .
+
+      - name: Get changed files (PR only)
+        if: github.event_name == 'pull_request'
+        id: changed-files
+        uses: tj-actions/changed-files@v47
+        with:
+          files: |
+            **/*.py
+          files_ignore: |
+            migrations/**
+            tests/**
+            manage.py
+            __pycache__/**
+
+      - name: Run tests with differential coverage (PR)
+        if: github.event_name == 'pull_request'
+        env:
+          SECRET_KEY: "test-secret-key-for-ci"
+          DEBUG: "True"
+          DB_NAME: "test_syncscope"
+          DB_USER: "postgres"
+          DB_PASSWORD: "postgres"
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          REDIS_URL: "redis://localhost:6379/0"
+          JWT_SECRET_KEY: "test-jwt-secret"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
+          CORS_ALLOWED_ORIGINS: "http://localhost:3000"
+          AUTH_SERVICE_URL: "http://localhost:8001"
+          MONITORING_SERVICE_URL: "http://localhost:8002"
+          ANALYTICS_SERVICE_URL: "http://localhost:8004"
+          MANAGEMENT_SERVICE_URL: "http://localhost:8005"
+          API_GATEWAY_URL: "http://localhost:8000"
+          FRONTEND_URL: "http://localhost:3000"
+        run: |
+          pip install diff-cover
+          coverage run -m pytest tests/ --ds=config.test_settings
+          coverage xml
+          coverage report > coverage-report.txt
+
+          if [ "${{ steps.changed-files.outputs.any_changed }}" == "true" ]; then
+            BASE_BRANCH="${{ github.base_ref }}"
+            DIFF_COVER_STATUS=0
+
+            if git rev-parse "$BASE_BRANCH" >/dev/null 2>&1; then
+              diff-cover coverage.xml --compare-branch="$BASE_BRANCH" --fail-under=80 || DIFF_COVER_STATUS=$?
+            else
+              diff-cover coverage.xml --compare-branch="HEAD~1" --fail-under=80 || DIFF_COVER_STATUS=$?
+            fi
+
+            if [ $DIFF_COVER_STATUS -eq 0 ]; then
+              echo "diff_coverage_status=passed" >> $GITHUB_ENV
+            else
+              echo "diff_coverage_status=failed" >> $GITHUB_ENV
+            fi
+          else
+            echo "diff_coverage_status=skipped" >> $GITHUB_ENV
+          fi
+
+      - name: Run tests with full coverage (Push)
+        if: github.event_name == 'push'
+        env:
+          SECRET_KEY: "test-secret-key-for-ci"
+          DEBUG: "True"
+          DB_NAME: "test_syncscope"
+          DB_USER: "postgres"
+          DB_PASSWORD: "postgres"
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          REDIS_URL: "redis://localhost:6379/0"
+          JWT_SECRET_KEY: "test-jwt-secret"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
+          CORS_ALLOWED_ORIGINS: "http://localhost:3000"
+          AUTH_SERVICE_URL: "http://localhost:8001"
+          MONITORING_SERVICE_URL: "http://localhost:8002"
+          ANALYTICS_SERVICE_URL: "http://localhost:8004"
+          MANAGEMENT_SERVICE_URL: "http://localhost:8005"
+          API_GATEWAY_URL: "http://localhost:8000"
+          FRONTEND_URL: "http://localhost:3000"
+        run: |
+          coverage run -m pytest tests/ --ds=config.test_settings
+          coverage report
+          coverage xml
+
+      - name: Check coverage threshold
+        id: coverage_check
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            if [ -f "coverage.xml" ] && [ -f "coverage-report.txt" ]; then
+              COVERAGE=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
+              echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+              echo "type=differential" >> $GITHUB_OUTPUT
+
+              DIFF_STATUS="$diff_coverage_status"
+              if [ "$DIFF_STATUS" = "passed" ]; then
+                echo "status=passed" >> $GITHUB_OUTPUT
+              elif [ "$DIFF_STATUS" = "failed" ]; then
+                echo "status=failed" >> $GITHUB_OUTPUT
+                exit 1
+              else
+                echo "status=passed" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "coverage=N/A" >> $GITHUB_OUTPUT
+              echo "status=passed" >> $GITHUB_OUTPUT
+              echo "type=differential" >> $GITHUB_OUTPUT
+            fi
+          else
+            COVERAGE=$(coverage report | grep TOTAL | awk '{print $4}' | sed 's/%//')
+            echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+            echo "type=full" >> $GITHUB_OUTPUT
+
+            if ! python -c "import sys; sys.exit(0 if float('${COVERAGE}') >= 80 else 1)"; then
+              echo "status=failed" >> $GITHUB_OUTPUT
+              exit 1
+            else
+              echo "status=passed" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Comment coverage report on PR
+        if: github.event_name == 'pull_request'
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          pytest-coverage-path: ./coverage-report.txt
+          pytest-xml-coverage-path: ./coverage.xml
+          title: "🧪 Alerts Service - Differential Coverage Report"
+          badge-title: "Coverage"
+          report-only-changed-files: true
+          hide-comment: false
+          default-branch: ${{ github.base_ref }}
+
+      - name: Security check
+        continue-on-error: true
+        run: |
+          pip install safety bandit
+          safety scan --json || safety check --json || echo "Security scan completed"
+          bandit -r . -x tests/ -f json || echo "Bandit scan completed"
+
+      - name: Build check
+        env:
+          SECRET_KEY: "test-secret-key-for-ci"
+          DEBUG: "True"
+          DB_NAME: "test_syncscope"
+          DB_USER: "postgres"
+          DB_PASSWORD: "postgres"
+          DB_HOST: "localhost"
+          DB_PORT: "5432"
+          REDIS_URL: "redis://localhost:6379/0"
+          JWT_SECRET_KEY: "test-jwt-secret"
+          ALLOWED_HOSTS: "localhost,127.0.0.1"
+          CORS_ALLOWED_ORIGINS: "http://localhost:3000"
+          AUTH_SERVICE_URL: "http://localhost:8001"
+          MONITORING_SERVICE_URL: "http://localhost:8002"
+          ANALYTICS_SERVICE_URL: "http://localhost:8004"
+          MANAGEMENT_SERVICE_URL: "http://localhost:8005"
+          API_GATEWAY_URL: "http://localhost:8000"
+          FRONTEND_URL: "http://localhost:3000"
+        run: |
+          python manage.py collectstatic --noinput --settings=config.test_settings
+          python manage.py check --settings=config.test_settings
+          python manage.py spectacular --file schema.yml --settings=config.test_settings
+
+      - name: Upload schema artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alerts-service-openapi-schema
+          path: schema.yml
