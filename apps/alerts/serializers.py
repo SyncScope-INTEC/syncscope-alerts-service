@@ -15,7 +15,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = AlertNotificationRule
+        model = AlertRule
         fields = [
             "id",
             "name",
