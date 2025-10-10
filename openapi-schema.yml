@@ -1,0 +1,1375 @@
+openapi: 3.0.3
+info:
+  title: SyncScope Alerts Service API
+  version: 1.0.0
+  description: Real-time alerting and notification service for SyncScope platform
+paths:
+  /:
+    get:
+      operationId: root_retrieve
+      description: API home endpoint
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          description: No response body
+  /alerts/alerts/:
+    get:
+      operationId: alerts_list
+      description: ViewSet for managing alerts
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - alerts
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlertList'
+          description: ''
+    post:
+      operationId: alerts_create
+      description: ViewSet for managing alerts
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+  /alerts/alerts/{id}/:
+    get:
+      operationId: alerts_retrieve
+      description: ViewSet for managing alerts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - alerts
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertDetail'
+          description: ''
+    put:
+      operationId: alerts_update
+      description: ViewSet for managing alerts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+    patch:
+      operationId: alerts_partial_update
+      description: ViewSet for managing alerts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRequest'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+    delete:
+      operationId: alerts_destroy
+      description: ViewSet for managing alerts
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - alerts
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+  /alerts/alerts/{id}/mute/:
+    post:
+      operationId: alerts_mute_create
+      description: Mute a specific alert
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+  /alerts/alerts/acknowledge/:
+    post:
+      operationId: alerts_acknowledge_create
+      description: Acknowledge one or more alerts
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+  /alerts/alerts/resolve/:
+    post:
+      operationId: alerts_resolve_create
+      description: Resolve one or more alerts
+      tags:
+      - alerts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+  /alerts/alerts/statistics/:
+    get:
+      operationId: alerts_statistics_retrieve
+      description: Get alert statistics for the company
+      tags:
+      - alerts
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+          description: ''
+  /alerts/channels/:
+    get:
+      operationId: channels_list
+      description: ViewSet for managing notification channels
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - channels
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationChannelList'
+          description: ''
+    post:
+      operationId: channels_create
+      description: Create a new notification channel
+      tags:
+      - channels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+          description: ''
+  /alerts/channels/{id}/:
+    get:
+      operationId: channels_retrieve
+      description: ViewSet for managing notification channels
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - channels
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+          description: ''
+    put:
+      operationId: channels_update
+      description: ViewSet for managing notification channels
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - channels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+          description: ''
+    patch:
+      operationId: channels_partial_update
+      description: ViewSet for managing notification channels
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - channels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationChannelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationChannelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationChannelRequest'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+          description: ''
+    delete:
+      operationId: channels_destroy
+      description: ViewSet for managing notification channels
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - channels
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+  /alerts/channels/{id}/test/:
+    post:
+      operationId: channels_test_create
+      description: Test a notification channel
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - channels
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+          description: ''
+  /alerts/notifications/:
+    get:
+      operationId: notifications_list
+      description: ViewSet for viewing notification logs
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - notifications
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+  /alerts/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      description: ViewSet for viewing notification logs
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /alerts/rules/:
+    get:
+      operationId: rules_list
+      description: ViewSet for managing alert rules
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - rules
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlertRuleList'
+          description: ''
+    post:
+      operationId: rules_create
+      description: Create a new alert rule
+      tags:
+      - rules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /alerts/rules/{id}/:
+    get:
+      operationId: rules_retrieve
+      description: ViewSet for managing alert rules
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - rules
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRuleDetail'
+          description: ''
+    put:
+      operationId: rules_update
+      description: ViewSet for managing alert rules
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - rules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+    patch:
+      operationId: rules_partial_update
+      description: ViewSet for managing alert rules
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - rules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAlertRuleRequest'
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+    delete:
+      operationId: rules_destroy
+      description: ViewSet for managing alert rules
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - rules
+      security:
+      - Bearer: []
+      responses:
+        '204':
+          description: No response body
+  /alerts/rules/{id}/activate/:
+    post:
+      operationId: rules_activate_create
+      description: Activate an alert rule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - rules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /alerts/rules/{id}/deactivate/:
+    post:
+      operationId: rules_deactivate_create
+      description: Deactivate an alert rule
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - rules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /alerts/rules/{id}/test/:
+    post:
+      operationId: rules_test_create
+      description: Test an alert rule with optional test data
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - rules
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AlertRuleRequest'
+        required: true
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+          description: ''
+  /health/:
+    get:
+      operationId: health_retrieve
+      description: Ultra-simple health check for Railway
+      tags:
+      - health
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          description: No response body
+  /health/detailed/:
+    get:
+      operationId: health_detailed_retrieve
+      description: |-
+        Detailed health check endpoint
+        Checks database connection and cache availability
+      tags:
+      - health
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          description: No response body
+  /health/live/:
+    get:
+      operationId: health_live_retrieve
+      description: Liveness check - determines if service is alive
+      tags:
+      - health
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          description: No response body
+  /health/ready/:
+    get:
+      operationId: health_ready_retrieve
+      description: Readiness check - determines if service is ready to accept traffic
+      tags:
+      - health
+      security:
+      - Bearer: []
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    Alert:
+      type: object
+      description: Serializer for Alert model
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        rule:
+          type: string
+          format: uuid
+        rule_name:
+          type: string
+          readOnly: true
+        triggered_for_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        triggered_for_team_id:
+          type: string
+          format: uuid
+          nullable: true
+        severity:
+          type: string
+          maxLength: 20
+        title:
+          type: string
+          maxLength: 255
+        message:
+          type: string
+        is_read:
+          type: boolean
+        acknowledged_by:
+          type: string
+          format: uuid
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        triggered_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          type: string
+          maxLength: 20
+        context_data: {}
+      required:
+      - id
+      - message
+      - rule
+      - rule_name
+      - severity
+      - title
+      - triggered_at
+    AlertDetail:
+      type: object
+      description: Detailed serializer for Alert with full alert rule info
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        rule:
+          allOf:
+          - $ref: '#/components/schemas/AlertRule'
+          readOnly: true
+        rule_name:
+          type: string
+          readOnly: true
+        triggered_for_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        triggered_for_team_id:
+          type: string
+          format: uuid
+          nullable: true
+        severity:
+          type: string
+          maxLength: 20
+        title:
+          type: string
+          maxLength: 255
+        message:
+          type: string
+        is_read:
+          type: boolean
+        acknowledged_by:
+          type: string
+          format: uuid
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        triggered_at:
+          type: string
+          format: date-time
+          readOnly: true
+        status:
+          type: string
+          maxLength: 20
+        context_data: {}
+      required:
+      - id
+      - message
+      - rule
+      - rule_name
+      - severity
+      - title
+      - triggered_at
+    AlertRequest:
+      type: object
+      description: Serializer for Alert model
+      properties:
+        rule:
+          type: string
+          format: uuid
+        triggered_for_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        triggered_for_team_id:
+          type: string
+          format: uuid
+          nullable: true
+        severity:
+          type: string
+          minLength: 1
+          maxLength: 20
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        message:
+          type: string
+          minLength: 1
+        is_read:
+          type: boolean
+        acknowledged_by:
+          type: string
+          format: uuid
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          minLength: 1
+          maxLength: 20
+        context_data: {}
+      required:
+      - message
+      - rule
+      - severity
+      - title
+    AlertRule:
+      type: object
+      description: Serializer for AlertRule model
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        metric_type:
+          type: string
+          maxLength: 100
+        condition:
+          type: string
+          maxLength: 50
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        is_active:
+          type: boolean
+        check_interval_minutes:
+          type: integer
+        company_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - company_id
+      - condition
+      - created_at
+      - id
+      - metric_type
+      - name
+      - updated_at
+    AlertRuleDetail:
+      type: object
+      description: Detailed serializer for AlertRule
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        metric_type:
+          type: string
+          maxLength: 100
+        condition:
+          type: string
+          maxLength: 50
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        is_active:
+          type: boolean
+        check_interval_minutes:
+          type: integer
+        company_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - company_id
+      - condition
+      - created_at
+      - id
+      - metric_type
+      - name
+      - updated_at
+    AlertRuleRequest:
+      type: object
+      description: Serializer for AlertRule model
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        metric_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+        condition:
+          type: string
+          minLength: 1
+          maxLength: 50
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        is_active:
+          type: boolean
+        check_interval_minutes:
+          type: integer
+        company_id:
+          type: string
+          format: uuid
+      required:
+      - company_id
+      - condition
+      - metric_type
+      - name
+    Notification:
+      type: object
+      description: Serializer for Notification model
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+        alert:
+          type: string
+          format: uuid
+        alert_title:
+          type: string
+          readOnly: true
+        notification_type:
+          type: string
+          maxLength: 20
+        subject:
+          type: string
+          nullable: true
+          maxLength: 200
+        message:
+          type: string
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        read_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        status:
+          type: string
+          maxLength: 20
+        delivery_metadata: {}
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - alert
+      - alert_title
+      - created_at
+      - id
+      - message
+      - notification_type
+      - read_at
+      - sent_at
+      - user_id
+    NotificationChannel:
+      type: object
+      description: Serializer for NotificationChannel model
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        type:
+          type: string
+          maxLength: 50
+        config: {}
+        is_active:
+          type: boolean
+        company_id:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - company_id
+      - created_at
+      - id
+      - name
+      - type
+    NotificationChannelRequest:
+      type: object
+      description: Serializer for NotificationChannel model
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        config: {}
+        is_active:
+          type: boolean
+        company_id:
+          type: string
+          format: uuid
+      required:
+      - company_id
+      - name
+      - type
+    PaginatedAlertList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Alert'
+    PaginatedAlertRuleList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlertRule'
+    PaginatedNotificationChannelList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationChannel'
+    PaginatedNotificationList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
+    PatchedAlertRequest:
+      type: object
+      description: Serializer for Alert model
+      properties:
+        rule:
+          type: string
+          format: uuid
+        triggered_for_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        triggered_for_team_id:
+          type: string
+          format: uuid
+          nullable: true
+        severity:
+          type: string
+          minLength: 1
+          maxLength: 20
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        message:
+          type: string
+          minLength: 1
+        is_read:
+          type: boolean
+        acknowledged_by:
+          type: string
+          format: uuid
+          nullable: true
+        acknowledged_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          minLength: 1
+          maxLength: 20
+        context_data: {}
+    PatchedAlertRuleRequest:
+      type: object
+      description: Serializer for AlertRule model
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+          nullable: true
+        metric_type:
+          type: string
+          minLength: 1
+          maxLength: 100
+        condition:
+          type: string
+          minLength: 1
+          maxLength: 50
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        is_active:
+          type: boolean
+        check_interval_minutes:
+          type: integer
+        company_id:
+          type: string
+          format: uuid
+    PatchedNotificationChannelRequest:
+      type: object
+      description: Serializer for NotificationChannel model
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        type:
+          type: string
+          minLength: 1
+          maxLength: 50
+        config: {}
+        is_active:
+          type: boolean
+        company_id:
+          type: string
+          format: uuid
+  securitySchemes:
+    Bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Enter your Bearer token in the format: Bearer <token>'
+servers:
+- url: http://127.0.0.1:8003
+  description: Local alerts service
+- url: http://localhost:8003
+  description: Local development server
+- url: https://syncscope-alerts-service-dev.up.railway.app
+  description: Development server
+tags:
+- name: Alert Rules
+  description: Alert rule management endpoints
+- name: Alerts
+  description: Alert management and acknowledgment endpoints
+- name: Notification Channels
+  description: Notification channel configuration endpoints
+- name: Notifications
+  description: Notification log and status endpoints
+- name: Health
+  description: Service health check endpoints

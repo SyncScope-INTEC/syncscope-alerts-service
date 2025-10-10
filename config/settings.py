@@ -405,9 +405,6 @@ SPECTACULAR_SETTINGS = {
     # Better component handling
     "COMPONENT_SPLIT_PATCH": True,
     "COMPONENT_SPLIT_REQUEST": True,
-    "ENUM_NAME_OVERRIDES": {
-        "ValidationErrorEnum": "django.core.exceptions.ValidationError",
-    },
     # Tags configuration
     "TAGS": [
         {
