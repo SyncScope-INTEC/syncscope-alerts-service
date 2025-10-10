@@ -37,3 +37,18 @@ def django_db_setup(django_db_setup, django_db_blocker):
     # Restore original managed state
     for model in unmanaged_models:
         model._meta.managed = original_managed[model]
+
+
+def pytest_collection_modifyitems(config, items):
+    """
+    Modify test collection to exclude non-test functions from apps module
+    """
+    # Remove items from apps.alerts.tasks module (Celery tasks are not pytest tests)
+    filtered_items = []
+    for item in items:
+        # Skip if it's from apps.alerts.tasks module
+        if hasattr(item, "module") and item.module.__name__ == "apps.alerts.tasks":
+            continue
+        filtered_items.append(item)
+
+    items[:] = filtered_items

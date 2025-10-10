@@ -237,10 +237,10 @@ def test_notification_channel(channel_id: str, test_alert_data: dict = None):
 
         # Create a test alert (not saved to database)
         if test_alert_data:
-            alert = Alert(**test_alert_data)
+            alert = AlertNotification(**test_alert_data)
         else:
             # Use default test data
-            alert = Alert(
+            alert = AlertNotification(
                 id="00000000-0000-0000-0000-000000000000",
                 title="Test Alert",
                 message="This is a test notification from SyncScope Alerts Service",
