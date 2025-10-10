@@ -13,8 +13,8 @@ from apps.alerts.notification_handlers import (
     EmailNotificationHandler,
     InAppNotificationHandler,
     PushNotificationHandler,
-    SMSNotificationHandler,
     SlackNotificationHandler,
+    SMSNotificationHandler,
     WebhookNotificationHandler,
     send_notification,
 )
