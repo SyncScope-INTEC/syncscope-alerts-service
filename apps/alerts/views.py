@@ -68,21 +68,13 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         queryset = AlertRule.objects.filter(company_id=company_id)
 
         # Filter by parameters
-        rule_type = self.request.query_params.get("rule_type")
-        if rule_type:
-            queryset = queryset.filter(rule_type=rule_type)
+        metric_type = self.request.query_params.get("metric_type")
+        if metric_type:
+            queryset = queryset.filter(metric_type=metric_type)
 
         is_active = self.request.query_params.get("is_active")
         if is_active is not None:
             queryset = queryset.filter(is_active=is_active.lower() == "true")
-
-        severity = self.request.query_params.get("severity")
-        if severity:
-            queryset = queryset.filter(severity=severity)
-
-        target_type = self.request.query_params.get("target_type")
-        if target_type:
-            queryset = queryset.filter(target_type=target_type)
 
         return queryset.order_by("-created_at")
 
@@ -264,7 +256,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         alert.mute()
 
         return Response(
-            {"message": "Alert muted", "state": alert.state},
+            {"message": "Alert muted", "status": alert.status},
             status=status.HTTP_200_OK,
         )
 

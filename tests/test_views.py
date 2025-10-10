@@ -149,9 +149,10 @@ class TestAlertRuleViewSet:
             "description": alert_rule.description,
             "metric_type": alert_rule.metric_type,
             "condition": alert_rule.condition,
-            "threshold_value": alert_rule.threshold_value,
+            "threshold_value": str(alert_rule.threshold_value),
             "check_interval_minutes": alert_rule.check_interval_minutes,
             "is_active": alert_rule.is_active,
+            "company_id": str(alert_rule.company_id),
         }
 
         response = api_client.put(f"/alerts/rules/{alert_rule.id}/", data, format="json")
@@ -211,22 +212,22 @@ class TestAlertRuleViewSet:
         assert alert_rule.is_active is False
 
     def test_filter_alert_rules_by_type(self, api_client, mock_user, company_id):
-        """Test filtering alert rules by type"""
+        """Test filtering alert rules by metric type"""
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = company_id
 
-        # Create rules with different types
+        # Create rules with different metric types
         AlertRule.objects.create(
             name="CPU Rule",
             company_id=company_id,
             metric_type="cpu_usage",
-            condition={"operator": "gt", "value": 80},
+            condition="greater_than",
             threshold_value=80,
             check_interval_minutes=30,
             is_active=True,
         )
 
-        response = api_client.get("/alerts/rules/?rule_type=metric")
+        response = api_client.get("/alerts/rules/?metric_type=cpu_usage")
 
         # Should work without errors (filtering logic may vary)
         assert response.status_code == status.HTTP_200_OK
@@ -294,7 +295,7 @@ class TestAlertViewSet:
         response = api_client.post(f"/alerts/alerts/{alert_notification.id}/mute/")
 
         assert response.status_code == status.HTTP_200_OK
-        assert "state" in response.data
+        assert "status" in response.data
 
     def test_alert_statistics(self, api_client, mock_user, alert_notification):
         """Test getting alert statistics"""
@@ -396,7 +397,7 @@ class TestNotificationChannelViewSet:
         mock_user.company_id = notification_channel.company_id
         mock_task.return_value.id = "test-task-id"
 
-        response = api_client.post(f"/api/channels/{notification_channel.id}/test/")
+        response = api_client.post(f"/alerts/channels/{notification_channel.id}/test/")
 
         assert response.status_code == status.HTTP_202_ACCEPTED
         assert "task_id" in response.data

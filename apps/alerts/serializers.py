@@ -194,5 +194,4 @@ class AlertStatisticsSerializer(serializers.Serializer):
 class AlertRuleTestSerializer(serializers.Serializer):
     """Serializer for testing alert rules"""
 
-    rule_id = serializers.UUIDField(required=True)
     test_data = serializers.JSONField(required=False, help_text="Optional test data to simulate metric values")
