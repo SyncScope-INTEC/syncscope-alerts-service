@@ -13,9 +13,9 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        build-essential \
-        libpq-dev \
-        curl \
+    build-essential \
+    libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -28,21 +28,18 @@ COPY . .
 # Create staticfiles directory with proper permissions
 RUN mkdir -p /app/staticfiles
 
-# Create non-root user
-RUN groupadd -r appuser && useradd -r -g appuser appuser \
-    && chown -R appuser:appuser /app
-USER appuser
-
-# Expose port
-EXPOSE 8000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health/ || exit 1
-
 # Create start script that collects static files at runtime
 COPY --chown=appuser:appuser start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser \
+    && chown -R appuser:appuser /app \
+    && chmod +x /app/start.sh
+
+USER appuser
+
+# Expose port (Railway will override this with PORT env var)
+EXPOSE 8080
 
 # Run start script
 CMD ["/app/start.sh"]
