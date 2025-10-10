@@ -231,3 +231,12 @@ class Notification(RetryableModelMixin, models.Model):
         self.status = "failed"
         self.delivery_metadata["error"] = error_message
         self.save()
+
+    def mark_retrying(self):
+        """Mark notification as retrying"""
+        if not self.delivery_metadata:
+            self.delivery_metadata = {}
+        retry_count = self.delivery_metadata.get("retry_count", 0)
+        self.delivery_metadata["retry_count"] = retry_count + 1
+        self.status = "retrying"
+        self.save()

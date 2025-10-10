@@ -351,22 +351,24 @@ def send_notification(alert: AlertNotification, channel: NotificationChannel):
         channel: NotificationChannel to use
 
     Returns:
-        NotificationLog: Created notification log
+        Notification: Created notification log
     """
     # Create notification log
-    notification_log = NotificationLog.objects.create(
+    notification_log = Notification.objects.create(
         alert=alert,
-        channel=channel,
+        user_id=alert.triggered_for_user_id or alert.triggered_for_team_id or "00000000-0000-0000-0000-000000000000",
+        notification_type=channel.type,
+        message=alert.message,
         status="pending",
     )
 
     try:
         # Get handler for channel type
-        handler = NOTIFICATION_HANDLERS.get(channel.channel_type)
+        handler = NOTIFICATION_HANDLERS.get(channel.type)
 
         if not handler:
-            logger.error(f"No handler for channel type: {channel.channel_type}")
-            notification_log.mark_failed(f"Unsupported channel type: {channel.channel_type}")
+            logger.error(f"No handler for channel type: {channel.type}")
+            notification_log.mark_failed(f"Unsupported channel type: {channel.type}")
             return notification_log
 
         # Send notification

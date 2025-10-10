@@ -398,6 +398,21 @@ class TestFetchFromAnalytics:
 
     @patch("apps.alerts.alert_engine.requests.post")
     @patch("apps.alerts.alert_engine.get_auth_headers")
+    def test_fetch_success_with_null_value(self, mock_headers, mock_post):
+        """Test fetch with null value in response"""
+        mock_headers.return_value = {"Authorization": "Bearer token"}
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"value": None}
+        mock_post.return_value = mock_response
+
+        value, data = self.engine._fetch_from_analytics("productivity_score", "user", uuid.uuid4())
+
+        assert value is None
+        assert "value" in data
+
+    @patch("apps.alerts.alert_engine.requests.post")
+    @patch("apps.alerts.alert_engine.get_auth_headers")
     def test_fetch_error_response(self, mock_headers, mock_post):
         """Test fetch with error response"""
         mock_headers.return_value = {"Authorization": "Bearer token"}

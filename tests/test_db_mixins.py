@@ -101,6 +101,16 @@ class TestRetryableManager:
         assert hasattr(manager.count, "__wrapped__")
 
 
+class TestRetryableQuerySet:
+    """Tests for RetryableQuerySet"""
+
+    def test_queryset_exists(self):
+        """Test RetryableQuerySet can be imported"""
+        from config.database_retry import RetryableQuerySet
+
+        assert RetryableQuerySet is not None
+
+
 class TestServerlessViewMixin:
     """Tests for ServerlessViewMixin"""
 
