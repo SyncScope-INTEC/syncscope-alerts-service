@@ -5,6 +5,14 @@ Inherits from base settings and overrides for testing environment
 
 from .settings import *
 
+# Remove apps that aren't installed or not needed for tests
+INSTALLED_APPS = [app for app in INSTALLED_APPS if app not in [
+    'daphne',
+    'channels',
+    'django_celery_beat',
+    'django_celery_results',
+]]
+
 # Override secret key for tests
 SECRET_KEY = "test-secret-key-for-ci-cd-pipeline"
 
@@ -50,12 +58,8 @@ CELERY_TASK_EAGER_PROPAGATES = True
 CELERY_BROKER_URL = "memory://"
 CELERY_RESULT_BACKEND = "cache+memory://"
 
-# Use in-memory channel layer for WebSocket tests
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
-    }
-}
+# Disable ASGI for tests
+ASGI_APPLICATION = None
 
 # Disable CSRF for tests
 CSRF_COOKIE_SECURE = False

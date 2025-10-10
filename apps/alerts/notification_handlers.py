@@ -8,8 +8,6 @@ import logging
 from abc import ABC, abstractmethod
 
 import requests
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -261,6 +259,14 @@ class InAppNotificationHandler(NotificationHandler):
 
             if not user_ids:
                 logger.warning(f"No user IDs configured for in-app channel {channel.name}")
+                return False
+
+            # Lazy import channels to avoid dependency issues in tests
+            try:
+                from asgiref.sync import async_to_sync
+                from channels.layers import get_channel_layer
+            except ImportError:
+                logger.error("Channels not installed - in-app notifications unavailable")
                 return False
 
             # Get channel layer
