@@ -6,12 +6,17 @@ Inherits from base settings and overrides for testing environment
 from .settings import *
 
 # Remove apps that aren't installed or not needed for tests
-INSTALLED_APPS = [app for app in INSTALLED_APPS if app not in [
-    'daphne',
-    'channels',
-    'django_celery_beat',
-    'django_celery_results',
-]]
+INSTALLED_APPS = [
+    app
+    for app in INSTALLED_APPS
+    if app
+    not in [
+        "daphne",
+        "channels",
+        "django_celery_beat",
+        "django_celery_results",
+    ]
+]
 
 # Override secret key for tests
 SECRET_KEY = "test-secret-key-for-ci-cd-pipeline"
