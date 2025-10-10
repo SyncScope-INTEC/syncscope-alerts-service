@@ -222,7 +222,7 @@ def cleanup_old_resolved_alerts():
 
 
 @shared_task(name="apps.alerts.tasks.test_notification_channel")
-def test_notification_channel(channel_id: str, test_alert_data: dict = None):
+def send_test_notification(channel_id: str, test_alert_data: dict = None):
     """
     Test a notification channel by sending a test notification
 

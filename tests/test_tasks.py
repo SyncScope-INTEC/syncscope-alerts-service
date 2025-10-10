@@ -17,7 +17,7 @@ from apps.alerts.tasks import (
     evaluate_single_alert_rule,
     retry_failed_notifications,
     send_alert_notifications,
-    test_notification_channel,
+    send_test_notification,
 )
 
 
@@ -446,8 +446,8 @@ class TestCleanupOldResolvedAlerts:
 
 
 @pytest.mark.django_db
-class TestTestNotificationChannel:
-    """Tests for test_notification_channel task"""
+class TestSendTestNotification:
+    """Tests for send_test_notification task"""
 
     @patch("apps.alerts.models.NotificationChannel.objects.get")
     def test_handles_channel_not_found(self, mock_get_channel):
@@ -457,7 +457,7 @@ class TestTestNotificationChannel:
         channel_id = uuid.uuid4()
         mock_get_channel.side_effect = ChannelModel.DoesNotExist()
 
-        result = test_notification_channel(str(channel_id))
+        result = send_test_notification(str(channel_id))
 
         assert result["success"] is False
         assert "not found" in result["error"]

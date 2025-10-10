@@ -390,7 +390,7 @@ class TestNotificationChannelViewSet:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
-    @patch("apps.alerts.views.test_notification_channel.delay")
+    @patch("apps.alerts.views.send_test_notification.delay")
     def test_test_notification_channel(self, mock_task, api_client, mock_user, notification_channel):
         """Test triggering notification channel test"""
         api_client.force_authenticate(user=mock_user)

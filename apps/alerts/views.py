@@ -28,7 +28,7 @@ from .serializers import (
     NotificationChannelSerializer,
     NotificationSerializer,
 )
-from .tasks import evaluate_single_alert_rule, test_notification_channel
+from .tasks import evaluate_single_alert_rule, send_test_notification
 
 logger = logging.getLogger(__name__)
 
@@ -362,7 +362,7 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         channel = self.get_object()
 
         # Trigger test notification asynchronously
-        task = test_notification_channel.delay(str(channel.id))
+        task = send_test_notification.delay(str(channel.id))
 
         return Response(
             {
