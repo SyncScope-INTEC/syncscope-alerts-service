@@ -140,3 +140,119 @@ class TestServerlessViewMixin:
         params = list(sig.parameters.keys())
         assert "self" in params
         assert "exc" in params
+
+    @patch("config.database_retry.DatabaseHealthCheck.is_healthy")
+    def test_dispatch_healthy_database(self, mock_is_healthy):
+        """Test dispatch when database is healthy"""
+        mock_is_healthy.return_value = True
+
+        # Create a base class with dispatch method
+        class BaseView:
+            def dispatch(self, request, *args, **kwargs):
+                return "success"
+
+        # Create test view with mixin
+        class TestView(ServerlessViewMixin, BaseView):
+            pass
+
+        view = TestView()
+        request = Mock()
+        result = view.dispatch(request)
+
+        assert result == "success"
+        mock_is_healthy.assert_called_once()
+
+    @patch("config.database_retry.close_old_connections")
+    @patch("config.database_retry.DatabaseHealthCheck.is_healthy")
+    def test_dispatch_unhealthy_database_recovers(self, mock_is_healthy, mock_close):
+        """Test dispatch when database is unhealthy but recovers"""
+        # First call unhealthy, second call (after closing connections) healthy
+        mock_is_healthy.side_effect = [False, True]
+
+        # Create a base class with dispatch method
+        class BaseView:
+            def dispatch(self, request, *args, **kwargs):
+                return "success"
+
+        # Create test view with mixin
+        class TestView(ServerlessViewMixin, BaseView):
+            pass
+
+        view = TestView()
+        request = Mock()
+        result = view.dispatch(request)
+
+        assert result == "success"
+        mock_close.assert_called_once()
+        assert mock_is_healthy.call_count == 2
+
+    @patch("config.database_retry.close_old_connections")
+    @patch("config.database_retry.DatabaseHealthCheck.is_healthy")
+    def test_dispatch_unhealthy_database_fails(self, mock_is_healthy, mock_close):
+        """Test dispatch when database stays unhealthy"""
+        # Both calls return unhealthy
+        mock_is_healthy.return_value = False
+
+        # Create a base class with dispatch method
+        class BaseView:
+            def dispatch(self, request, *args, **kwargs):
+                return "success"
+
+        # Create test view with mixin
+        class TestView(ServerlessViewMixin, BaseView):
+            pass
+
+        view = TestView()
+        request = Mock()
+        result = view.dispatch(request)
+
+        assert isinstance(result, Response)
+        assert result.status_code == 503
+        assert "error" in result.data
+        mock_close.assert_called_once()
+
+    @patch("config.database_retry.is_retryable_error")
+    @patch("config.database_retry.DatabaseHealthCheck.mark_unhealthy")
+    def test_handle_exception_retryable(self, mock_mark_unhealthy, mock_is_retryable):
+        """Test handle_exception with retryable error"""
+        mock_is_retryable.return_value = True
+
+        # Create a base class with handle_exception method
+        class BaseView:
+            def handle_exception(self, exc):
+                return "handled"
+
+        # Create test view with mixin
+        class TestView(ServerlessViewMixin, BaseView):
+            pass
+
+        view = TestView()
+        exc = OperationalError("Database error")
+        result = view.handle_exception(exc)
+
+        assert result == "handled"
+        mock_is_retryable.assert_called_once_with(exc)
+        mock_mark_unhealthy.assert_called_once()
+
+    @patch("config.database_retry.is_retryable_error")
+    @patch("config.database_retry.DatabaseHealthCheck.mark_unhealthy")
+    def test_handle_exception_not_retryable(self, mock_mark_unhealthy, mock_is_retryable):
+        """Test handle_exception with non-retryable error"""
+        mock_is_retryable.return_value = False
+
+        # Create a base class with handle_exception method
+        class BaseView:
+            def handle_exception(self, exc):
+                return "handled"
+
+        # Create test view with mixin
+        class TestView(ServerlessViewMixin, BaseView):
+            pass
+
+        view = TestView()
+        exc = ValueError("Non-database error")
+        result = view.handle_exception(exc)
+
+        assert result == "handled"
+        mock_is_retryable.assert_called_once_with(exc)
+        mock_mark_unhealthy.assert_not_called()

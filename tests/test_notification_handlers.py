@@ -206,6 +206,24 @@ class TestSlackNotificationHandler:
 
         assert message["attachments"][0]["color"] == "#36A64F"
 
+    @patch("apps.alerts.notification_handlers.requests.post")
+    def test_send_slack_request_exception(self, mock_post):
+        """Test Slack notification with request exception"""
+        mock_post.side_effect = Exception("Network error")
+
+        alert = self.create_mock_alert()
+
+        channel = Mock(spec=NotificationChannel)
+        channel.name = "Slack Channel"
+        channel.config = {"webhook_url": "https://hooks.slack.com/test"}
+
+        notification_log = Mock(spec=Notification)
+
+        result = self.handler.send(alert, channel, notification_log)
+
+        assert result is False
+        assert "Network error" in notification_log.error_message
+
 
 @pytest.mark.django_db
 class TestWebhookNotificationHandler:
@@ -324,6 +342,64 @@ class TestWebhookNotificationHandler:
         result = self.handler.send(alert, channel, notification_log)
 
         assert result is False
+
+    @patch("apps.alerts.notification_handlers.requests.post")
+    def test_send_webhook_http_error(self, mock_post):
+        """Test webhook with HTTP error response"""
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        mock_post.return_value = mock_response
+
+        alert = self.create_mock_alert()
+
+        channel = Mock(spec=NotificationChannel)
+        channel.name = "Webhook Channel"
+        channel.config = {"url": "https://example.com/webhook"}
+
+        notification_log = Mock(spec=Notification)
+
+        result = self.handler.send(alert, channel, notification_log)
+
+        assert result is False
+        assert "400" in notification_log.error_message
+
+    @patch("apps.alerts.notification_handlers.requests.post")
+    def test_send_webhook_connection_error(self, mock_post):
+        """Test webhook with connection error"""
+        mock_post.side_effect = Exception("Connection timeout")
+
+        alert = self.create_mock_alert()
+
+        channel = Mock(spec=NotificationChannel)
+        channel.name = "Webhook Channel"
+        channel.config = {"url": "https://example.com/webhook"}
+
+        notification_log = Mock(spec=Notification)
+
+        result = self.handler.send(alert, channel, notification_log)
+
+        assert result is False
+        assert "Connection timeout" in notification_log.error_message
+
+    @patch("apps.alerts.notification_handlers.requests.post")
+    def test_send_webhook_202_accepted(self, mock_post):
+        """Test webhook with 202 Accepted response"""
+        mock_response = Mock()
+        mock_response.status_code = 202
+        mock_post.return_value = mock_response
+
+        alert = self.create_mock_alert()
+
+        channel = Mock(spec=NotificationChannel)
+        channel.name = "Webhook Channel"
+        channel.config = {"url": "https://example.com/webhook"}
+
+        notification_log = Mock(spec=Notification)
+
+        result = self.handler.send(alert, channel, notification_log)
+
+        assert result is True
 
 
 @pytest.mark.django_db

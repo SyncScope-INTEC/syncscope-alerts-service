@@ -488,3 +488,55 @@ class TestGenerateAlertMessages:
         assert "100" in message
         assert "gt" in message
         assert "HIGH" in message
+
+
+@pytest.mark.django_db
+class TestTriggerAlertEdgeCases:
+    """Tests for trigger_alert edge cases"""
+
+    def setup_method(self):
+        """Setup for each test"""
+        self.engine = alert_engine
+        self.company_id = uuid.uuid4()
+
+    @patch("apps.alerts.tasks.send_alert_notifications")
+    def test_trigger_alert_during_cooldown(self, mock_send):
+        """Test that alert is not created during cooldown period"""
+        # Create a rule
+        rule = AlertRule.objects.create(
+            name="Test Rule",
+            company_id=self.company_id,
+            metric_type="cpu_usage",
+            condition="greater_than",
+            threshold_value=80,
+            check_interval_minutes=30,
+        )
+
+        # Mock is_in_cooldown to return True
+        with patch.object(rule, "is_in_cooldown", return_value=True):
+            context = {"current_value": 90, "target_id": uuid.uuid4()}
+            alert = self.engine.trigger_alert(rule, context)
+
+        assert alert is None
+        # Notification should not be sent
+        mock_send.delay.assert_not_called()
+
+    @patch("apps.alerts.tasks.send_alert_notifications")
+    def test_trigger_alert_error_handling(self, mock_send):
+        """Test error handling in trigger_alert"""
+        # Create a rule
+        rule = AlertRule.objects.create(
+            name="Test Rule",
+            company_id=self.company_id,
+            metric_type="cpu_usage",
+            condition="greater_than",
+            threshold_value=80,
+            check_interval_minutes=30,
+        )
+
+        # Mock AlertNotification.objects.create to raise an exception
+        with patch("apps.alerts.models.AlertNotification.objects.create", side_effect=Exception("DB error")):
+            context = {"current_value": 90}
+            alert = self.engine.trigger_alert(rule, context)
+
+        assert alert is None
