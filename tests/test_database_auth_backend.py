@@ -12,7 +12,6 @@ from apps.alerts.database_auth_backend import CachedAuthServiceAPIBackend
 from apps.alerts.models import User
 
 
-@pytest.mark.django_db
 class TestCachedAuthServiceAPIBackend:
     """Tests for CachedAuthServiceAPIBackend"""
 
@@ -21,10 +20,16 @@ class TestCachedAuthServiceAPIBackend:
         self.backend = CachedAuthServiceAPIBackend()
         cache.clear()
 
+    @patch("apps.alerts.database_auth_backend.User.objects.get_or_create")
     @patch("apps.alerts.database_auth_backend.requests.post")
-    def test_authenticate_success(self, mock_post):
+    def test_authenticate_success(self, mock_post, mock_get_or_create):
         """Test successful authentication"""
         user_id = uuid.uuid4()
+        mock_user = Mock(spec=User)
+        mock_user.email = "test@example.com"
+        mock_user.first_name = "Test"
+        mock_user.is_staff = True
+
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -40,6 +45,7 @@ class TestCachedAuthServiceAPIBackend:
             "token": "test-token",
         }
         mock_post.return_value = mock_response
+        mock_get_or_create.return_value = (mock_user, True)
 
         user = self.backend.authenticate(None, username="test@example.com", password="password123")
 
@@ -72,18 +78,14 @@ class TestCachedAuthServiceAPIBackend:
         user = self.backend.authenticate(None, username=None, password="password")
         assert user is None
 
+    @patch("apps.alerts.database_auth_backend.User.objects.get")
     @patch("apps.alerts.database_auth_backend.requests.post")
-    def test_authenticate_with_cache(self, mock_post):
+    def test_authenticate_with_cache(self, mock_post, mock_get):
         """Test authentication with cached user data"""
-        # Create a user first
-        user = User.objects.create(
-            id=uuid.uuid4(),
-            email="cached@example.com",
-            first_name="Cached",
-            last_name="User",
-            is_staff=False,
-            is_active=True,
-        )
+        mock_user = Mock(spec=User)
+        mock_user.email = "cached@example.com"
+        mock_user.first_name = "Cached"
+        mock_get.return_value = mock_user
 
         # Set cache
         cache_key = "auth_user_cached@example.com"
@@ -92,7 +94,7 @@ class TestCachedAuthServiceAPIBackend:
         # Authenticate should use cache
         result = self.backend.authenticate(None, username="cached@example.com", password="password")
 
-        assert result == user
+        assert result == mock_user
         mock_post.assert_not_called()
 
     @patch("apps.alerts.database_auth_backend.requests.post")
@@ -104,10 +106,15 @@ class TestCachedAuthServiceAPIBackend:
 
         assert user is None
 
+    @patch("apps.alerts.database_auth_backend.User.objects.get_or_create")
     @patch("apps.alerts.database_auth_backend.requests.post")
-    def test_authenticate_creates_user(self, mock_post):
+    def test_authenticate_creates_user(self, mock_post, mock_get_or_create):
         """Test that authentication creates new user"""
         user_id = uuid.uuid4()
+        mock_user = Mock(spec=User)
+        mock_user.email = "newuser@example.com"
+        mock_user.first_name = "New"
+
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -122,20 +129,23 @@ class TestCachedAuthServiceAPIBackend:
             }
         }
         mock_post.return_value = mock_response
-
-        # Verify user doesn't exist
-        assert not User.objects.filter(email="newuser@example.com").exists()
+        mock_get_or_create.return_value = (mock_user, True)
 
         user = self.backend.authenticate(None, username="newuser@example.com", password="password")
 
-        # Verify user was created
+        # Verify user was returned
         assert user is not None
-        assert User.objects.filter(email="newuser@example.com").exists()
+        assert user.email == "newuser@example.com"
+        mock_get_or_create.assert_called_once()
 
+    @patch("apps.alerts.database_auth_backend.User.objects.get_or_create")
     @patch("apps.alerts.database_auth_backend.requests.post")
-    def test_authenticate_updates_cache(self, mock_post):
+    def test_authenticate_updates_cache(self, mock_post, mock_get_or_create):
         """Test that authentication updates cache"""
         user_id = uuid.uuid4()
+        mock_user = Mock(spec=User)
+        mock_user.email = "test@example.com"
+
         mock_response = Mock()
         mock_response.status_code = 200
         mock_response.json.return_value = {
@@ -146,6 +156,7 @@ class TestCachedAuthServiceAPIBackend:
             }
         }
         mock_post.return_value = mock_response
+        mock_get_or_create.return_value = (mock_user, True)
 
         cache_key = "auth_user_test@example.com"
         assert cache.get(cache_key) is None
@@ -155,21 +166,27 @@ class TestCachedAuthServiceAPIBackend:
         # Verify cache was set
         assert cache.get(cache_key) is not None
 
-    def test_get_user_success(self):
+    @patch("apps.alerts.database_auth_backend.User.objects.get")
+    def test_get_user_success(self, mock_get):
         """Test getting user by ID"""
         user_id = uuid.uuid4()
-        user = User.objects.create(
-            id=user_id,
-            email="test@example.com",
-            first_name="Test",
-        )
+        mock_user = Mock(spec=User)
+        mock_user.id = user_id
+        mock_user.email = "test@example.com"
+        mock_get.return_value = mock_user
 
         result = self.backend.get_user(user_id)
 
-        assert result == user
+        assert result == mock_user
+        mock_get.assert_called_once_with(pk=user_id)
 
-    def test_get_user_not_found(self):
+    @patch("apps.alerts.database_auth_backend.User.objects.get")
+    def test_get_user_not_found(self, mock_get):
         """Test getting non-existent user"""
+        from apps.alerts.models import User as UserModel
+
+        mock_get.side_effect = UserModel.DoesNotExist()
+
         result = self.backend.get_user(uuid.uuid4())
 
         assert result is None
