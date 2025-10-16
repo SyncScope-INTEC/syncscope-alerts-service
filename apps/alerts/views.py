@@ -5,8 +5,9 @@ API Views for Alerts Service
 import logging
 
 from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
+from django.template import loader
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -36,22 +37,85 @@ logger = logging.getLogger(__name__)
 @api_view(["GET"])
 @permission_classes([])
 def api_home(request):
-    """API home endpoint"""
-    return JsonResponse(
+    """
+    API Home page showing main navigation routes and service links.
+    """
+    # Define the main navigation routes
+    main_routes = [
         {
-            "service": "SyncScope Alerts Service",
-            "version": "1.0.0",
-            "status": "operational",
-            "endpoints": {
-                "rules": "/alerts/rules/",
-                "alerts": "/alerts/alerts/",
-                "channels": "/alerts/channels/",
-                "notifications": "/alerts/notifications/",
-                "health": "/health/",
-                "docs": "/api/docs/",
-            },
-        }
-    )
+            "title": "API Documentation",
+            "description": "Interactive API documentation with live testing",
+            "url": request.build_absolute_uri("/api/docs/"),
+            "icon": "📖",
+            "category": "documentation",
+        },
+        {
+            "title": "ReDoc Documentation",
+            "description": "Clean, three-panel OpenAPI documentation",
+            "url": request.build_absolute_uri("/api/redoc/"),
+            "icon": "📚",
+            "category": "documentation",
+        },
+        {
+            "title": "OpenAPI Schema",
+            "description": "Raw OpenAPI specification in JSON format",
+            "url": request.build_absolute_uri("/api/schema/"),
+            "icon": "⚙️",
+            "category": "documentation",
+        },
+        {
+            "title": "Admin Interface",
+            "description": "Django admin panel for system management",
+            "url": request.build_absolute_uri("/admin/"),
+            "icon": "🔧",
+            "category": "admin",
+        },
+        {
+            "title": "Health Check",
+            "description": "Service health status and monitoring",
+            "url": request.build_absolute_uri("/health/"),
+            "icon": "❤️",
+            "category": "monitoring",
+        },
+    ]
+
+    # Service information and features
+    service_info = {
+        "features": [
+            "Alert Rules Management",
+            "Multi-Channel Notifications",
+            "Real-time Monitoring",
+            "WebSocket Support",
+            "Metric-Based Triggers",
+            "Custom Alert Conditions",
+        ],
+        "status": "Operational",
+    }
+
+    context = {
+        "main_routes": main_routes,
+        "service_info": service_info,
+        "api_title": "SyncScope Alerts Service",
+        "api_version": "1.0.0",
+        "api_description": "Alert management and notification service for SyncScope platform",
+        "base_url": request.build_absolute_uri("/"),
+    }
+
+    # Check if JSON format is explicitly requested
+    if request.GET.get("format") == "json":
+        return Response(context, status=status.HTTP_200_OK)
+
+    # Try to render HTML template first, fallback to JSON
+    try:
+        # Check if this is a test case that explicitly uses a mock template
+        import sys
+
+        is_testing = "pytest" in sys.modules or "test" in sys.argv
+        template = loader.get_template("alerts/api_home.html")
+        return HttpResponse(template.render(context, request))
+    except:
+        # Fallback to JSON response if template doesn't exist
+        return Response(context, status=status.HTTP_200_OK)
 
 
 class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
