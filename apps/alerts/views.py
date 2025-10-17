@@ -8,6 +8,7 @@ from django.db.models import Count, Q
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template import loader
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -34,6 +35,7 @@ from .tasks import evaluate_single_alert_rule, send_test_notification
 logger = logging.getLogger(__name__)
 
 
+@extend_schema(exclude=True)  # Exclude from API docs as it returns HTML
 @api_view(["GET"])
 @permission_classes([])
 def api_home(request):
@@ -118,6 +120,14 @@ def api_home(request):
         return Response(context, status=status.HTTP_200_OK)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=["Alert Rules"], summary="List alert rules"),
+    create=extend_schema(tags=["Alert Rules"], summary="Create alert rule"),
+    retrieve=extend_schema(tags=["Alert Rules"], summary="Get alert rule details"),
+    update=extend_schema(tags=["Alert Rules"], summary="Update alert rule"),
+    partial_update=extend_schema(tags=["Alert Rules"], summary="Partially update alert rule"),
+    destroy=extend_schema(tags=["Alert Rules"], summary="Delete alert rule"),
+)
 class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
     """ViewSet for managing alert rules"""
 
@@ -160,6 +170,7 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(tags=["Alert Rules"], summary="Test alert rule evaluation")
     @action(detail=True, methods=["post"])
     def test(self, request, pk=None):
         """Test an alert rule with optional test data"""
@@ -181,6 +192,7 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
+    @extend_schema(tags=["Alert Rules"], summary="Activate alert rule")
     @action(detail=True, methods=["post"])
     def activate(self, request, pk=None):
         """Activate an alert rule"""
@@ -193,6 +205,7 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(tags=["Alert Rules"], summary="Deactivate alert rule")
     @action(detail=True, methods=["post"])
     def deactivate(self, request, pk=None):
         """Deactivate an alert rule"""
@@ -206,6 +219,14 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(tags=["Alerts"], summary="List alerts"),
+    create=extend_schema(tags=["Alerts"], summary="Create alert"),
+    retrieve=extend_schema(tags=["Alerts"], summary="Get alert details"),
+    update=extend_schema(tags=["Alerts"], summary="Update alert"),
+    partial_update=extend_schema(tags=["Alerts"], summary="Partially update alert"),
+    destroy=extend_schema(tags=["Alerts"], summary="Delete alert"),
+)
 class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
     """ViewSet for managing alerts"""
 
@@ -243,6 +264,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             return AlertDetailSerializer
         return AlertSerializer
 
+    @extend_schema(tags=["Alerts"], summary="Acknowledge one or more alerts")
     @action(detail=False, methods=["post"])
     def acknowledge(self, request):
         """Acknowledge one or more alerts"""
@@ -274,6 +296,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(tags=["Alerts"], summary="Resolve one or more alerts")
     @action(detail=False, methods=["post"])
     def resolve(self, request):
         """Resolve one or more alerts"""
@@ -305,6 +328,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(tags=["Alerts"], summary="Mute a specific alert")
     @action(detail=True, methods=["post"])
     def mute(self, request, pk=None):
         """Mute a specific alert"""
@@ -324,6 +348,7 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(tags=["Alerts"], summary="Get alert statistics")
     @action(detail=False, methods=["get"])
     def statistics(self, request):
         """Get alert statistics for the company"""
@@ -372,6 +397,14 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema_view(
+    list=extend_schema(tags=["Notification Channels"], summary="List notification channels"),
+    create=extend_schema(tags=["Notification Channels"], summary="Create notification channel"),
+    retrieve=extend_schema(tags=["Notification Channels"], summary="Get notification channel details"),
+    update=extend_schema(tags=["Notification Channels"], summary="Update notification channel"),
+    partial_update=extend_schema(tags=["Notification Channels"], summary="Partially update notification channel"),
+    destroy=extend_schema(tags=["Notification Channels"], summary="Delete notification channel"),
+)
 class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
     """ViewSet for managing notification channels"""
 
@@ -420,6 +453,7 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(tags=["Notification Channels"], summary="Test notification channel")
     @action(detail=True, methods=["post"])
     def test(self, request, pk=None):
         """Test a notification channel"""
@@ -437,6 +471,10 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         )
 
 
+@extend_schema_view(
+    list=extend_schema(tags=["Notifications"], summary="List notification logs"),
+    retrieve=extend_schema(tags=["Notifications"], summary="Get notification log details"),
+)
 class NotificationLogViewSet(ServerlessViewMixin, viewsets.ReadOnlyModelViewSet):
     """ViewSet for viewing notification logs"""
 

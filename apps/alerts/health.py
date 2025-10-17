@@ -6,11 +6,13 @@ import logging
 
 from django.db import connection
 from django.http import JsonResponse
+from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import api_view, permission_classes
 
 logger = logging.getLogger(__name__)
 
 
+@extend_schema(tags=["Health"], summary="Simple health check")
 @api_view(["GET"])
 @permission_classes([])
 def simple_health_check(request):
@@ -18,6 +20,7 @@ def simple_health_check(request):
     return JsonResponse({"status": "healthy"}, status=200)
 
 
+@extend_schema(tags=["Health"], summary="Detailed health check")
 @api_view(["GET"])
 @permission_classes([])
 def health_check(request):
@@ -94,6 +97,7 @@ def health_check(request):
     return JsonResponse(health_status, status=status_code)
 
 
+@extend_schema(tags=["Health"], summary="Readiness check")
 @api_view(["GET"])
 @permission_classes([])
 def readiness_check(request):
@@ -126,6 +130,7 @@ def readiness_check(request):
         )
 
 
+@extend_schema(tags=["Health"], summary="Liveness check")
 @api_view(["GET"])
 @permission_classes([])
 def liveness_check(request):
