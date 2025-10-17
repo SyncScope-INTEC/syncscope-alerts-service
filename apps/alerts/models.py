@@ -49,13 +49,9 @@ class User(AbstractBaseUser):
 
 
 def get_table_name(base_name):
-    """Get table name with or without schema prefix based on test mode."""
-    if "test" in sys.argv or "pytest" in sys.modules:
-        # SQLite doesn't support schemas, use simple table names for tests
-        return base_name
-    else:
-        # PostgreSQL with alerts schema
-        return f"alerts.{base_name}"
+    """Get table name without schema prefix - let PostgreSQL search_path handle schema resolution."""
+    # Always return simple table name - PostgreSQL will use search_path to find it in the alerts schema
+    return base_name
 
 
 class AlertRule(RetryableModelMixin, models.Model):
