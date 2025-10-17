@@ -63,7 +63,7 @@ class EmailNotificationHandler(NotificationHandler):
                 return False
 
             # Get SendGrid API key from settings
-            sendgrid_api_key = getattr(settings, 'SENDGRID_API_KEY', None)
+            sendgrid_api_key = getattr(settings, "SENDGRID_API_KEY", None)
             if not sendgrid_api_key:
                 logger.error("SENDGRID_API_KEY not configured in settings")
                 notification_log.error_message = "SendGrid API key not configured"
@@ -75,7 +75,7 @@ class EmailNotificationHandler(NotificationHandler):
             plain_content = self._format_email_message(alert)
 
             # Get sender email from settings
-            from_email = getattr(settings, 'SENDGRID_FROM_EMAIL', settings.DEFAULT_FROM_EMAIL)
+            from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
 
             # Send to each recipient
             sg = SendGridAPIClient(sendgrid_api_key)
@@ -89,7 +89,7 @@ class EmailNotificationHandler(NotificationHandler):
                         to_emails=recipient,
                         subject=subject,
                         plain_text_content=plain_content,
-                        html_content=html_content
+                        html_content=html_content,
                     )
 
                     response = sg.send(message)
@@ -144,9 +144,9 @@ This is an automated alert from SyncScope.
         # Severity color mapping
         severity_colors = {
             "critical": "#DC2626",  # Red
-            "high": "#EA580C",      # Orange
-            "medium": "#F59E0B",    # Amber
-            "low": "#10B981",       # Green
+            "high": "#EA580C",  # Orange
+            "medium": "#F59E0B",  # Amber
+            "low": "#10B981",  # Green
         }
         severity_color = severity_colors.get(alert.severity, "#6B7280")
 
