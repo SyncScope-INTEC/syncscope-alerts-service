@@ -34,6 +34,10 @@ staticfiles/
 # Environment
 .env
 .env.local
+.env.*
+.dev.env
+.qa.env
+.prod.env
 
 # IDE
 .vscode/
