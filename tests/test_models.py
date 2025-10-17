@@ -84,7 +84,8 @@ class TestAlertNotification:
         """Test muting an alert notification"""
         alert_notification.mute()
 
-        assert alert_notification.status == "muted"
+        assert alert_notification.status == "acknowledged"
+        assert alert_notification.is_read is True
 
 
 @pytest.mark.django_db
