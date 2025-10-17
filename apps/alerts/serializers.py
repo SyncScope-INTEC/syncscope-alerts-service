@@ -10,8 +10,8 @@ from .models import AlertNotification, AlertRule, Notification, NotificationChan
 class AlertRuleSerializer(serializers.ModelSerializer):
     """Serializer for AlertRule model"""
 
-    # Explicitly define company_id to ensure proper UUID validation and conversion
-    company_id = serializers.UUIDField(required=False)
+    # company_id is read-only - automatically set from authenticated user's company
+    company_id = serializers.UUIDField(read_only=True)
 
     class Meta:
         model = AlertRule
@@ -28,7 +28,7 @@ class AlertRuleSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "company_id", "created_at", "updated_at"]
 
     def validate_condition(self, value):
         """Validate condition JSON structure"""
@@ -110,8 +110,8 @@ class AlertResolveSerializer(serializers.Serializer):
 class NotificationChannelSerializer(serializers.ModelSerializer):
     """Serializer for NotificationChannel model"""
 
-    # Explicitly define company_id to ensure proper UUID validation and conversion
-    company_id = serializers.UUIDField(required=False)
+    # company_id is read-only - automatically set from authenticated user's company
+    company_id = serializers.UUIDField(read_only=True)
 
     class Meta:
         model = NotificationChannel
@@ -124,7 +124,7 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
             "company_id",
             "created_at",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "company_id", "created_at"]
 
     def validate_config(self, value):
         """Validate config JSON structure based on channel type"""

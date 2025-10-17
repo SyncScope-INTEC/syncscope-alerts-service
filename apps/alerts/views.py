@@ -160,13 +160,10 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Create a new alert rule"""
-        # Set company_id from authenticated user
-        data = request.data.copy()
-        data["company_id"] = str(request.user.company_id)
-
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        # Set company_id from authenticated user (company_id is read-only in serializer)
+        serializer.save(company_id=request.user.company_id)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -443,13 +440,10 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # Set company_id from authenticated user
-        data = request.data.copy()
-        data["company_id"] = str(request.user.company_id)
-
-        serializer = self.get_serializer(data=data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        # Set company_id from authenticated user (company_id is read-only in serializer)
+        serializer.save(company_id=request.user.company_id)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
