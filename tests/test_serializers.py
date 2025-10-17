@@ -52,7 +52,6 @@ class TestAlertRuleSerializer:
         data = {
             "name": "New Rule",
             "description": "New test rule",
-            "company_id": str(company_id),
             "metric_type": "cpu_usage",
             "condition": "greater_than_or_equal",
             "threshold_value": 80,
@@ -62,10 +61,12 @@ class TestAlertRuleSerializer:
 
         serializer = AlertRuleSerializer(data=data)
         assert serializer.is_valid()
-        rule = serializer.save()
+        # company_id is read-only, so it must be passed to save()
+        rule = serializer.save(company_id=company_id)
 
         assert rule.name == "New Rule"
         assert rule.metric_type == "cpu_usage"
+        assert rule.company_id == company_id
 
     def test_validate_condition_valid(self):
         """Test condition validation with valid data"""
@@ -115,7 +116,6 @@ class TestAlertRuleSerializer:
 
         data = {
             "name": "New Rule",
-            "company_id": str(company_id),
             "metric_type": "test",
             "condition": "greater_than",
             "threshold_value": 10,
@@ -124,10 +124,12 @@ class TestAlertRuleSerializer:
 
         serializer = AlertRuleSerializer(data=data)
         assert serializer.is_valid()
-        rule = serializer.save()
+        # company_id is read-only, so it must be passed to save()
+        rule = serializer.save(company_id=company_id)
 
         assert rule.name == "New Rule"
         assert rule.condition == "greater_than"
+        assert rule.company_id == company_id
 
     def test_update_alert_rule(self):
         """Test updating alert rule"""
@@ -143,7 +145,6 @@ class TestAlertRuleSerializer:
 
         data = {
             "name": "Updated Rule",
-            "company_id": str(company_id),
             "metric_type": "test",
             "condition": "less_than",
             "threshold_value": 5,
@@ -156,6 +157,7 @@ class TestAlertRuleSerializer:
 
         assert updated_rule.name == "Updated Rule"
         assert updated_rule.condition == "less_than"
+        assert updated_rule.company_id == company_id  # Should remain unchanged
 
 
 @pytest.mark.django_db
@@ -275,7 +277,6 @@ class TestNotificationChannelSerializer:
             "name": "Email",
             "type": "email",
             "config": {"recipients": ["admin@example.com", "dev@example.com"]},
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
@@ -287,7 +288,6 @@ class TestNotificationChannelSerializer:
             "name": "Email",
             "type": "email",
             "config": {"other_field": "value"},
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
@@ -300,7 +300,6 @@ class TestNotificationChannelSerializer:
             "name": "Email",
             "type": "email",
             "config": {"recipients": "not-a-list"},
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
@@ -312,7 +311,6 @@ class TestNotificationChannelSerializer:
             "name": "Slack",
             "type": "slack",
             "config": {"webhook_url": "https://hooks.slack.com/services/xxx"},
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
@@ -324,7 +322,6 @@ class TestNotificationChannelSerializer:
             "name": "Slack",
             "type": "slack",
             "config": {"channel": "#alerts"},
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
@@ -337,7 +334,6 @@ class TestNotificationChannelSerializer:
             "name": "Webhook",
             "type": "webhook",
             "config": {"url": "https://example.com/webhook"},
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
@@ -349,7 +345,6 @@ class TestNotificationChannelSerializer:
             "name": "Webhook",
             "type": "webhook",
             "config": {"method": "POST"},
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
@@ -362,7 +357,6 @@ class TestNotificationChannelSerializer:
             "name": "Invalid",
             "type": "email",
             "config": "not-a-dict",
-            "company_id": str(uuid.uuid4()),
         }
 
         serializer = NotificationChannelSerializer(data=data)
