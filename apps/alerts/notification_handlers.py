@@ -9,8 +9,8 @@ from abc import ABC, abstractmethod
 
 import requests
 from django.conf import settings
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
+from sendgrid import SendGridAPIClient
+from sendgrid.helpers.mail import Mail
 
 from .models import AlertNotification, Notification, NotificationChannel
 
@@ -51,7 +51,7 @@ class NotificationHandler(ABC):
 
 
 class EmailNotificationHandler(NotificationHandler):
-    """Handler for email notifications"""
+    """Handler for email notifications using SendGrid API"""
 
     def send(self, alert: AlertNotification, channel: NotificationChannel, notification_log: Notification):
         try:
@@ -62,21 +62,58 @@ class EmailNotificationHandler(NotificationHandler):
                 logger.warning(f"No recipients configured for email channel {channel.name}")
                 return False
 
+            # Get SendGrid API key from settings
+            sendgrid_api_key = getattr(settings, 'SENDGRID_API_KEY', None)
+            if not sendgrid_api_key:
+                logger.error("SENDGRID_API_KEY not configured in settings")
+                notification_log.error_message = "SendGrid API key not configured"
+                return False
+
             # Prepare email content
             subject = f"[{alert.severity.upper()}] {alert.title}"
-            message = self._format_email_message(alert)
+            html_content = self._format_email_html(alert)
+            plain_content = self._format_email_message(alert)
 
-            # Send email
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=recipients,
-                fail_silently=False,
-            )
+            # Get sender email from settings
+            from_email = getattr(settings, 'SENDGRID_FROM_EMAIL', settings.DEFAULT_FROM_EMAIL)
 
-            logger.info(f"Sent email notification for alert {alert.id} to {len(recipients)} recipients")
-            return True
+            # Send to each recipient
+            sg = SendGridAPIClient(sendgrid_api_key)
+            success_count = 0
+            last_error = None
+
+            for recipient in recipients:
+                try:
+                    message = Mail(
+                        from_email=from_email,
+                        to_emails=recipient,
+                        subject=subject,
+                        plain_text_content=plain_content,
+                        html_content=html_content
+                    )
+
+                    response = sg.send(message)
+
+                    if response.status_code in [200, 201, 202]:
+                        success_count += 1
+                        logger.info(f"Sent email to {recipient} - Status: {response.status_code}")
+                    else:
+                        error_msg = f"Status {response.status_code}"
+                        logger.error(f"Failed to send to {recipient} - {error_msg}")
+                        if not last_error:
+                            last_error = error_msg
+
+                except Exception as e:
+                    logger.error(f"Error sending to {recipient}: {e}")
+                    if not last_error:
+                        last_error = str(e)
+
+            if success_count > 0:
+                logger.info(f"Sent email notification for alert {alert.id} to {success_count}/{len(recipients)} recipients")
+                return True
+            else:
+                notification_log.error_message = last_error or "Failed to send to any recipients"
+                return False
 
         except Exception as e:
             logger.error(f"Error sending email notification: {e}", exc_info=True)
@@ -84,16 +121,16 @@ class EmailNotificationHandler(NotificationHandler):
             return False
 
     def _format_email_message(self, alert: AlertNotification):
-        """Format email message"""
+        """Format plain text email message"""
         message = f"""
 Alert: {alert.title}
 Severity: {alert.severity.upper()}
-Status: {alert.state}
+Status: {alert.status}
 
 {alert.message}
 
-Alert Rule: {alert.alert_rule.name}
-Rule Type: {alert.alert_rule.rule_type}
+Alert Rule: {alert.rule.name}
+Metric Type: {alert.rule.metric_type}
 
 Triggered At: {alert.triggered_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
 
@@ -101,6 +138,74 @@ Triggered At: {alert.triggered_at.strftime('%Y-%m-%d %H:%M:%S UTC')}
 This is an automated alert from SyncScope.
 """
         return message
+
+    def _format_email_html(self, alert: AlertNotification):
+        """Format HTML email message"""
+        # Severity color mapping
+        severity_colors = {
+            "critical": "#DC2626",  # Red
+            "high": "#EA580C",      # Orange
+            "medium": "#F59E0B",    # Amber
+            "low": "#10B981",       # Green
+        }
+        severity_color = severity_colors.get(alert.severity, "#6B7280")
+
+        html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h1 style="color: {severity_color}; margin-top: 0; font-size: 24px;">
+            [{alert.severity.upper()}] Alert Notification
+        </h1>
+    </div>
+
+    <div style="background-color: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+        <h2 style="color: #1f2937; margin-top: 0; font-size: 20px;">{alert.title}</h2>
+        <p style="color: #4b5563; font-size: 16px; margin: 15px 0;">{alert.message}</p>
+
+        <div style="border-top: 1px solid #e5e7eb; margin: 20px 0; padding-top: 20px;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Severity:</td>
+                    <td style="padding: 8px 0;">
+                        <span style="background-color: {severity_color}; color: white; padding: 4px 12px; border-radius: 4px; font-size: 14px; font-weight: 600;">
+                            {alert.severity.upper()}
+                        </span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Status:</td>
+                    <td style="padding: 8px 0;">{alert.status}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Alert Rule:</td>
+                    <td style="padding: 8px 0;">{alert.rule.name}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Metric Type:</td>
+                    <td style="padding: 8px 0;">{alert.rule.metric_type}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-weight: 600;">Triggered At:</td>
+                    <td style="padding: 8px 0;">{alert.triggered_at.strftime('%Y-%m-%d %H:%M:%S UTC')}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px;">
+        <p>This is an automated alert from <strong>SyncScope</strong></p>
+        <p style="margin-top: 10px;">Alert ID: {alert.id}</p>
+    </div>
+</body>
+</html>
+"""
+        return html
 
 
 class SlackNotificationHandler(NotificationHandler):

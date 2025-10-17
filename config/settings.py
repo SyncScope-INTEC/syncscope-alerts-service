@@ -375,6 +375,10 @@ EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@syncscope.com")
 
+# SendGrid Configuration (API-based email sending)
+SENDGRID_API_KEY = config("SENDGRID_API_KEY", default="")
+SENDGRID_FROM_EMAIL = config("SENDGRID_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
+
 # API Documentation (Swagger/OpenAPI)
 SPECTACULAR_SETTINGS = {
     "TITLE": "SyncScope Alerts Service API",

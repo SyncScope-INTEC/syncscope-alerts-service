@@ -41,6 +41,7 @@ sentry-sdk>=1.30.0
 
 # Email
 django-anymail>=10.0
+sendgrid>=6.11.0
 
 # Development & Testing
 pytest>=7.4.0

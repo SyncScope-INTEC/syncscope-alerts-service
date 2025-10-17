@@ -32,23 +32,32 @@ class TestEmailNotificationHandler:
         """Create a mock alert for testing"""
         rule = Mock(spec=AlertRule)
         rule.name = "Test Rule"
-        rule.rule_type = "productivity"
+        rule.metric_type = "productivity"
 
         alert = Mock(spec=AlertNotification)
         alert.id = uuid.uuid4()
         alert.title = "Test Alert"
         alert.message = "Test message"
         alert.severity = "high"
-        alert.state = "active"
+        alert.status = "pending"
         alert.triggered_at = Mock()
         alert.triggered_at.strftime = Mock(return_value="2024-01-01 00:00:00 UTC")
-        alert.alert_rule = rule
+        alert.rule = rule
 
         return alert
 
-    @patch("apps.alerts.notification_handlers.send_mail")
-    def test_send_email_success(self, mock_send_mail):
-        """Test successful email sending"""
+    @patch("apps.alerts.notification_handlers.SendGridAPIClient")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_API_KEY", "test-api-key")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_FROM_EMAIL", "test@example.com")
+    def test_send_email_success(self, mock_sg_client):
+        """Test successful email sending via SendGrid"""
+        # Mock SendGrid response
+        mock_sg_instance = Mock()
+        mock_response = Mock()
+        mock_response.status_code = 202
+        mock_sg_instance.send.return_value = mock_response
+        mock_sg_client.return_value = mock_sg_instance
+
         alert = self.create_mock_alert()
 
         channel = Mock(spec=NotificationChannel)
@@ -60,7 +69,7 @@ class TestEmailNotificationHandler:
         result = self.handler.send(alert, channel, notification_log)
 
         assert result is True
-        mock_send_mail.assert_called_once()
+        mock_sg_instance.send.assert_called_once()
 
     def test_send_email_no_recipients(self):
         """Test email sending with no recipients"""
@@ -76,10 +85,15 @@ class TestEmailNotificationHandler:
 
         assert result is False
 
-    @patch("apps.alerts.notification_handlers.send_mail")
-    def test_send_email_exception(self, mock_send_mail):
+    @patch("apps.alerts.notification_handlers.SendGridAPIClient")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_API_KEY", "test-api-key")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_FROM_EMAIL", "test@example.com")
+    def test_send_email_exception(self, mock_sg_client):
         """Test email sending with exception"""
-        mock_send_mail.side_effect = Exception("SMTP error")
+        # Mock SendGrid to raise an exception
+        mock_sg_instance = Mock()
+        mock_sg_instance.send.side_effect = Exception("SendGrid API error")
+        mock_sg_client.return_value = mock_sg_instance
 
         alert = self.create_mock_alert()
 
@@ -92,7 +106,7 @@ class TestEmailNotificationHandler:
         result = self.handler.send(alert, channel, notification_log)
 
         assert result is False
-        assert notification_log.error_message == "SMTP error"
+        assert "SendGrid API error" in notification_log.error_message
 
     def test_format_email_message(self):
         """Test email message formatting"""
