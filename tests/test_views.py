@@ -82,15 +82,24 @@ class TestAPIHome:
     """Tests for API home endpoint"""
 
     def test_api_home(self, api_client):
-        """Test API home endpoint returns correct info"""
+        """Test API home endpoint returns HTML by default"""
         response = api_client.get("/")
 
         assert response.status_code == status.HTTP_200_OK
+        # Should return HTML by default
+        assert "text/html" in response["Content-Type"]
+        assert b"SyncScope Alerts Service" in response.content
+
+    def test_api_home_json(self, api_client):
+        """Test API home endpoint returns JSON when requested"""
+        response = api_client.get("/?format=json")
+
+        assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["service"] == "SyncScope Alerts Service"
-        assert data["version"] == "1.0.0"
-        assert data["status"] == "operational"
-        assert "endpoints" in data
+        assert data["api_title"] == "SyncScope Alerts Service"
+        assert data["api_version"] == "1.0.0"
+        assert "main_routes" in data
+        assert "service_info" in data
 
 
 @pytest.mark.django_db
