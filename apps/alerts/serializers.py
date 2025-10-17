@@ -10,6 +10,9 @@ from .models import AlertNotification, AlertRule, Notification, NotificationChan
 class AlertRuleSerializer(serializers.ModelSerializer):
     """Serializer for AlertRule model"""
 
+    # Explicitly define company_id to ensure proper UUID validation and conversion
+    company_id = serializers.UUIDField(required=False)
+
     class Meta:
         model = AlertRule
         fields = [
@@ -106,6 +109,9 @@ class AlertResolveSerializer(serializers.Serializer):
 
 class NotificationChannelSerializer(serializers.ModelSerializer):
     """Serializer for NotificationChannel model"""
+
+    # Explicitly define company_id to ensure proper UUID validation and conversion
+    company_id = serializers.UUIDField(required=False)
 
     class Meta:
         model = NotificationChannel
