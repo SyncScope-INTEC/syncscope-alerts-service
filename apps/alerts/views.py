@@ -358,7 +358,8 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         active_alerts = alerts.filter(status="pending").count()
         acknowledged_alerts = alerts.filter(status="acknowledged").count()
         resolved_alerts = alerts.filter(status="resolved").count()
-        muted_alerts = alerts.filter(status="muted").count()
+        # Muted alerts are tracked via is_read status, not a separate status value
+        muted_alerts = 0  # Deprecated: muted is no longer a valid status
 
         # Get counts by severity
         critical_alerts = alerts.filter(severity="critical").count()

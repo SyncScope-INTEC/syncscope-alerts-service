@@ -16,7 +16,9 @@ router = DefaultRouter()
 router.register(r"rules", AlertRuleViewSet, basename="alert-rules")
 router.register(r"channels", NotificationChannelViewSet, basename="notification-channels")
 router.register(r"notifications", NotificationLogViewSet, basename="notification-logs")
-router.register(r"alerts", AlertViewSet, basename="alerts")
+# Use empty string to avoid double prefix (/alerts/alerts/)
+# This creates /alerts/ endpoints for the AlertViewSet
+router.register(r"", AlertViewSet, basename="alerts")
 
 urlpatterns = [
     path("", include(router.urls)),

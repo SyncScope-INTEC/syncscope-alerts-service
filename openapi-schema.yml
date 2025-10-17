@@ -13,7 +13,7 @@ paths:
       responses:
         '200':
           description: No response body
-  /alerts/alerts/:
+  /alerts/:
     get:
       operationId: alerts_list
       description: ViewSet for managing alerts
@@ -61,7 +61,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Alert'
           description: ''
-  /alerts/alerts/{id}/:
+  /alerts/{id}/:
     get:
       operationId: alerts_retrieve
       description: ViewSet for managing alerts
@@ -161,7 +161,7 @@ paths:
       responses:
         '204':
           description: No response body
-  /alerts/alerts/{id}/mute/:
+  /alerts/{id}/mute/:
     post:
       operationId: alerts_mute_create
       description: Mute a specific alert
@@ -194,7 +194,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Alert'
           description: ''
-  /alerts/alerts/acknowledge/:
+  /alerts/acknowledge/:
     post:
       operationId: alerts_acknowledge_create
       description: Acknowledge one or more alerts
@@ -221,7 +221,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Alert'
           description: ''
-  /alerts/alerts/resolve/:
+  /alerts/resolve/:
     post:
       operationId: alerts_resolve_create
       description: Resolve one or more alerts
@@ -248,7 +248,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Alert'
           description: ''
-  /alerts/alerts/statistics/:
+  /alerts/statistics/:
     get:
       operationId: alerts_statistics_retrieve
       description: Get alert statistics for the company

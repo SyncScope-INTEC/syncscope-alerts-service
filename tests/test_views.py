@@ -263,7 +263,7 @@ class TestAlertViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_notification.rule.company_id
 
-        response = api_client.get("/alerts/alerts/")
+        response = api_client.get("/alerts/")
 
         assert response.status_code == status.HTTP_200_OK
         assert len(response.data["results"]) == 1
@@ -273,7 +273,7 @@ class TestAlertViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_notification.rule.company_id
 
-        response = api_client.get(f"/alerts/alerts/{alert_notification.id}/")
+        response = api_client.get(f"/alerts/{alert_notification.id}/")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["id"] == str(alert_notification.id)
@@ -287,7 +287,7 @@ class TestAlertViewSet:
 
         data = {"alert_ids": [str(alert_notification.id)]}
 
-        response = api_client.post("/alerts/alerts/acknowledge/", data, format="json")
+        response = api_client.post("/alerts/acknowledge/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["acknowledged_count"] == 1
@@ -301,7 +301,7 @@ class TestAlertViewSet:
 
         data = {"alert_ids": [str(alert_notification.id)]}
 
-        response = api_client.post("/alerts/alerts/resolve/", data, format="json")
+        response = api_client.post("/alerts/resolve/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["resolved_count"] == 1
@@ -313,7 +313,7 @@ class TestAlertViewSet:
         mock_user.company_id = alert_notification.rule.company_id
         mock_perm.return_value = True
 
-        response = api_client.post(f"/alerts/alerts/{alert_notification.id}/mute/")
+        response = api_client.post(f"/alerts/{alert_notification.id}/mute/")
 
         assert response.status_code == status.HTTP_200_OK
         assert "status" in response.data
@@ -323,7 +323,7 @@ class TestAlertViewSet:
         api_client.force_authenticate(user=mock_user)
         mock_user.company_id = alert_notification.rule.company_id
 
-        response = api_client.get("/alerts/alerts/statistics/")
+        response = api_client.get("/alerts/statistics/")
 
         assert response.status_code == status.HTTP_200_OK
         assert "total_alerts" in response.data

@@ -153,8 +153,13 @@ class AlertNotification(RetryableModelMixin, models.Model):
         self.save()
 
     def mute(self):
-        """Mute this alert notification"""
-        self.status = "muted"
+        """
+        Mute this alert notification.
+        Sets status to acknowledged and marks as read since muting
+        is effectively acknowledging without further action.
+        """
+        self.status = "acknowledged"
+        self.is_read = True
         self.save()
 
 
