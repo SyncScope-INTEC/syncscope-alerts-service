@@ -249,27 +249,25 @@ def send_test_notification(channel_id: str, test_alert_data: dict = None):
         channel = NotificationChannel.objects.get(id=channel_id)
 
         # Create a test alert (not saved to database)
+        # Using a plain object instead of AlertNotification to avoid ForeignKey validation
         if test_alert_data:
-            alert = AlertNotification(**test_alert_data)
+            alert = type("TestAlert", (), test_alert_data)()
         else:
-            # Use default test data
-            alert = AlertNotification(
-                id="00000000-0000-0000-0000-000000000000",
-                title="Test Alert Notification",
-                message="This is a test notification from SyncScope Alerts Service. If you received this email, your notification channel is configured correctly!",
-                severity="medium",
-                status="pending",
-                triggered_at=timezone.now(),
-            )
-            # Create mock rule object
-            alert.rule = type(
-                "obj",
-                (object,),
-                {
-                    "name": "Test Alert Rule",
-                    "metric_type": "test",
-                },
-            )
+            # Create a mock alert object with all necessary attributes
+            class TestAlert:
+                id = "00000000-0000-0000-0000-000000000000"
+                title = "Test Alert Notification"
+                message = "This is a test notification from SyncScope Alerts Service. If you received this email, your notification channel is configured correctly!"
+                severity = "medium"
+                status = "pending"
+                triggered_at = timezone.now()
+
+                # Mock rule object
+                class rule:
+                    name = "Test Alert Rule"
+                    metric_type = "test"
+
+            alert = TestAlert()
 
         # Send test notification
         from .notification_handlers import NOTIFICATION_HANDLERS
