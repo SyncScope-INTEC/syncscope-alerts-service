@@ -155,18 +155,27 @@ def retry_failed_notifications():
         # Get failed notifications that haven't exceeded max retries
         max_retries = settings.MAX_RETRY_ATTEMPTS
         retry_delay = timedelta(seconds=settings.NOTIFICATION_RETRY_DELAY)
+        cutoff_time = timezone.now() - retry_delay
 
+        # Get all failed notifications
         failed_notifications = Notification.objects.filter(
-            status="failed",
-            retry_count__lt=max_retries,
-            updated_at__lt=timezone.now() - retry_delay,
+            status__in=["failed", "retrying"],
+            created_at__lt=cutoff_time,
         )
 
         retry_count = 0
         success_count = 0
+        skipped_count = 0
 
         for notification_log in failed_notifications:
             try:
+                # Check retry count from delivery_metadata JSON field
+                current_retries = notification_log.delivery_metadata.get("retry_count", 0)
+
+                if current_retries >= max_retries:
+                    skipped_count += 1
+                    continue
+
                 # Mark as retrying
                 notification_log.mark_retrying()
 
@@ -182,11 +191,15 @@ def retry_failed_notifications():
                 logger.error(f"Error retrying notification {notification_log.id}: {e}", exc_info=True)
                 continue
 
-        logger.info(f"Notification retry complete: {retry_count} retried, {success_count} successful")
+        logger.info(
+            f"Notification retry complete: {retry_count} retried, "
+            f"{success_count} successful, {skipped_count} skipped (max retries reached)"
+        )
 
         return {
             "retried": retry_count,
             "successful": success_count,
+            "skipped": skipped_count,
         }
 
     except Exception as e:
@@ -275,11 +288,19 @@ def send_test_notification(channel_id: str, test_alert_data: dict = None):
             status="pending",
         )
 
+        # Add error_message as a temporary attribute for the handler to use
+        notification_log.error_message = None
+
         success = handler.send(alert, channel, notification_log)
+
+        # Get error from either the temporary attribute or delivery_metadata
+        error = notification_log.error_message or notification_log.delivery_metadata.get("error")
+
+        logger.info(f"Test notification for channel {channel_id}: success={success}, error={error}")
 
         return {
             "success": success,
-            "error": notification_log.error_message if not success else None,
+            "error": error,
         }
 
     except NotificationChannel.DoesNotExist:
