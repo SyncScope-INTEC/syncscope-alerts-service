@@ -242,33 +242,36 @@ def send_test_notification(channel_id: str, test_alert_data: dict = None):
             # Use default test data
             alert = AlertNotification(
                 id="00000000-0000-0000-0000-000000000000",
-                title="Test Alert",
-                message="This is a test notification from SyncScope Alerts Service",
-                severity="low",
-                state="active",
+                title="Test Alert Notification",
+                message="This is a test notification from SyncScope Alerts Service. If you received this email, your notification channel is configured correctly!",
+                severity="medium",
+                status="pending",
                 triggered_at=timezone.now(),
             )
-            alert.alert_rule = type(
+            # Create mock rule object
+            alert.rule = type(
                 "obj",
                 (object,),
                 {
-                    "name": "Test Rule",
-                    "rule_type": "test",
+                    "name": "Test Alert Rule",
+                    "metric_type": "test",
                 },
             )
 
         # Send test notification
         from .notification_handlers import NOTIFICATION_HANDLERS
 
-        handler = NOTIFICATION_HANDLERS.get(channel.channel_type)
+        handler = NOTIFICATION_HANDLERS.get(channel.type)
 
         if not handler:
-            return {"success": False, "error": f"Unsupported channel type: {channel.channel_type}"}
+            return {"success": False, "error": f"Unsupported channel type: {channel.type}"}
 
         # Create a dummy notification log for testing
         notification_log = Notification(
             alert=None,
-            channel=channel,
+            user_id="00000000-0000-0000-0000-000000000000",
+            notification_type=channel.type,
+            message=alert.message,
             status="pending",
         )
 
