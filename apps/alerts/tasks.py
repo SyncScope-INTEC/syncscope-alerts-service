@@ -4,6 +4,7 @@ Background tasks for alert evaluation and notification sending
 """
 
 import logging
+import uuid
 from datetime import timedelta
 
 from celery import shared_task
@@ -255,7 +256,7 @@ def send_test_notification(channel_id: str, test_alert_data: dict = None):
         else:
             # Create a mock alert object with all necessary attributes
             class TestAlert:
-                id = "00000000-0000-0000-0000-000000000000"
+                id = str(uuid.uuid4())  # Generate unique ID for each test
                 title = "Test Alert Notification"
                 message = "This is a test notification from SyncScope Alerts Service. If you received this email, your notification channel is configured correctly!"
                 severity = "medium"
