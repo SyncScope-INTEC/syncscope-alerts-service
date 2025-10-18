@@ -129,8 +129,12 @@ else:
 # Database connection configuration for PostgreSQL only
 if not USE_SQLITE:
     db_options = {
-        "connect_timeout": 10,
-        "application_name": "syncscope-alerts-serverless",
+        "connect_timeout": 30,  # Increased timeout for Railway database startup
+        "keepalives": 1,
+        "keepalives_idle": 30,
+        "keepalives_interval": 10,
+        "keepalives_count": 5,
+        "application_name": "syncscope-alerts-service",
     }
 
     # Schema configuration
@@ -150,7 +154,7 @@ if not USE_SQLITE:
 
     DATABASES["default"].update(
         {
-            "CONN_MAX_AGE": 0,  # Don't persist connections in serverless
+            "CONN_MAX_AGE": 600,  # Persist connections for 10 minutes (we're using supervisord, not serverless)
             "CONN_HEALTH_CHECKS": True,
             "OPTIONS": db_options,
         }
