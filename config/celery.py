@@ -16,9 +16,9 @@ app.autodiscover_tasks()
 
 # Celery Beat schedule for periodic alert evaluation
 app.conf.beat_schedule = {
-    "evaluate-alert-rules-every-minute": {
+    "evaluate-alert-rules-every-5-minutes": {
         "task": "apps.alerts.tasks.evaluate_all_active_alert_rules",
-        "schedule": crontab(minute="*/1"),  # Run every minute
+        "schedule": crontab(minute="*/5"),  # Run every 5 minutes
     },
     "cleanup-old-resolved-alerts": {
         "task": "apps.alerts.tasks.cleanup_old_resolved_alerts",
