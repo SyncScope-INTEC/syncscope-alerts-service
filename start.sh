@@ -22,6 +22,9 @@ fi
 # Run database migrations (only if not in test mode)
 if [ "$DJANGO_SETTINGS_MODULE" != "config.test_settings" ]; then
     echo "✓ Running database migrations..."
+    # Fake-apply alerts initial migration since tables already exist (managed=False)
+    python manage.py migrate alerts 0001_initial --fake 2>/dev/null || true
+    # Run all other migrations normally
     python manage.py migrate --noinput
 else
     echo "⊘ Skipping migrations (test mode)"
