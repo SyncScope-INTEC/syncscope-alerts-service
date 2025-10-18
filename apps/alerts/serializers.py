@@ -6,6 +6,16 @@ from rest_framework import serializers
 
 from .models import AlertNotification, AlertRule, Notification, NotificationChannel
 
+# Valid notification channel types
+CHANNEL_TYPE_CHOICES = [
+    ("email", "Email"),
+    ("slack", "Slack"),
+    ("webhook", "Webhook"),
+    ("in_app", "In-App"),
+    ("sms", "SMS"),
+    ("push", "Push Notification"),
+]
+
 
 class AlertRuleSerializer(serializers.ModelSerializer):
     """Serializer for AlertRule model"""
@@ -113,6 +123,11 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
     # company_id is read-only - automatically set from authenticated user's company
     company_id = serializers.UUIDField(read_only=True)
 
+    # Use ChoiceField to enforce valid channel types
+    type = serializers.ChoiceField(
+        choices=CHANNEL_TYPE_CHOICES, help_text="Type of notification channel (email, slack, webhook, in_app, sms, push)"
+    )
+
     class Meta:
         model = NotificationChannel
         fields = [
@@ -136,9 +151,9 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
 
         if channel_type == "email":
             if "recipients" not in value:
-                raise serializers.ValidationError("Email config must have 'recipients' field")
+                raise serializers.ValidationError("Email config must have 'recipients' field (list of email addresses)")
             if not isinstance(value["recipients"], list):
-                raise serializers.ValidationError("Email recipients must be a list")
+                raise serializers.ValidationError("Email 'recipients' must be a list of email addresses")
 
         elif channel_type == "slack":
             if "webhook_url" not in value:
@@ -147,6 +162,12 @@ class NotificationChannelSerializer(serializers.ModelSerializer):
         elif channel_type == "webhook":
             if "url" not in value:
                 raise serializers.ValidationError("Webhook config must have 'url' field")
+
+        elif channel_type == "in_app":
+            if "user_ids" not in value:
+                raise serializers.ValidationError("In-app config must have 'user_ids' field (list of UUIDs)")
+            if not isinstance(value["user_ids"], list):
+                raise serializers.ValidationError("In-app 'user_ids' must be a list of user UUIDs")
 
         return value
 
