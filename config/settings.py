@@ -255,7 +255,7 @@ CSRF_COOKIE_HTTPONLY = True
 # Rate limiting
 RATELIMIT_ENABLE = config("RATELIMIT_ENABLE", default=True, cast=bool)
 
-# Logging configuration
+# Logging configuration - Console only for containerized deployments
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -270,26 +270,25 @@ LOGGING = {
         },
     },
     "handlers": {
-        "file": {
-            "level": "INFO",
-            "class": "logging.FileHandler",
-            "filename": "django.log",
-            "formatter": "verbose",
-        },
         "console": {
             "level": "INFO",
             "class": "logging.StreamHandler",
-            "formatter": "simple",
+            "formatter": "verbose",
         },
     },
     "loggers": {
         "django": {
-            "handlers": ["file", "console"],
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,
         },
         "apps.alerts": {
-            "handlers": ["file", "console"],
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": True,
+        },
+        "celery": {
+            "handlers": ["console"],
             "level": "INFO",
             "propagate": True,
         },
