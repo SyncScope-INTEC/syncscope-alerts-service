@@ -370,7 +370,7 @@ NOTIFICATION_RETRY_DELAY = config("NOTIFICATION_RETRY_DELAY", default=300, cast=
 ALERT_RETENTION_DAYS = config("ALERT_RETENTION_DAYS", default=90, cast=int)
 
 # Email Configuration (SendGrid API for notifications)
-DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="noreply@syncscope.com")
+DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="SyncScope <noreply@syncscope.com>")
 SENDGRID_API_KEY = config("SENDGRID_API_KEY", default="")
 SENDGRID_FROM_EMAIL = config("SENDGRID_FROM_EMAIL", default=DEFAULT_FROM_EMAIL)
 
