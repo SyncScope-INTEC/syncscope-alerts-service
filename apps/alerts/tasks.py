@@ -254,22 +254,33 @@ def send_test_notification(channel_id: str, user_id: str = None, test_alert_data
         if not user_id:
             user_id = "00000000-0000-0000-0000-000000000000"
 
-        # Create a test AlertNotification to save to database
+        # Create or get a test alert rule for this channel
+        # This allows us to save real AlertNotification and Notification records
+        test_rule, created = AlertRule.objects.get_or_create(
+            company_id=channel.company_id,
+            name="[TEST] Alert Channel Test Rule",
+            defaults={
+                "description": "Automatically created test rule for notification channel testing",
+                "metric_type": "test",
+                "condition": "always",
+                "threshold_value": 0,
+                "check_interval_minutes": 60,
+                "is_active": False,  # Keep inactive so it doesn't actually trigger
+            },
+        )
+
+        # Create a test alert notification and save to database
         if test_alert_data:
             alert = type("TestAlert", (), test_alert_data)()
         else:
-            # Create a realistic test alert message
             test_alert = AlertNotification(
-                id=uuid.uuid4(),
+                rule=test_rule,
                 title="System Performance Alert - Test Notification",
                 message="Your SyncScope notification channel is working correctly! This is a test alert simulating a high CPU usage scenario. In production, you would receive alerts like this when critical thresholds are exceeded on your monitored resources.",
                 severity="medium",
-                state="active",
-                triggered_at=timezone.now(),
-                company_id=channel.company_id,
-                alert_rule=None,  # Test notifications don't have an associated rule
+                status="pending",
             )
-            # Save the test alert to database
+            # Save to database
             test_alert.save()
             alert = test_alert
 
