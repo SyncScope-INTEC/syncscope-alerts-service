@@ -118,6 +118,88 @@ class TestEmailNotificationHandler:
         assert "Test message" in message
         assert alert.severity.upper() in message
 
+    def test_format_email_html(self):
+        """Test HTML email formatting"""
+        alert = self.create_mock_alert()
+
+        html = self.handler._format_email_html(alert)
+
+        assert "Test Alert" in html
+        assert "Test message" in html
+        assert alert.severity.upper() in html
+        assert "<!DOCTYPE html>" in html
+        assert "HIGH" in html
+
+    @patch("apps.alerts.notification_handlers.SendGridAPIClient")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_FROM_EMAIL", "test@example.com")
+    def test_send_email_no_api_key(self, mock_sg_client):
+        """Test email sending with no SendGrid API key configured"""
+        with patch("apps.alerts.notification_handlers.settings.SENDGRID_API_KEY", None):
+            alert = self.create_mock_alert()
+
+            channel = Mock(spec=NotificationChannel)
+            channel.name = "Email Channel"
+            channel.config = {"recipients": ["test@example.com"]}
+
+            notification_log = Mock(spec=Notification)
+
+            result = self.handler.send(alert, channel, notification_log)
+
+            assert result is False
+            assert notification_log.error_message == "SendGrid API key not configured"
+
+    @patch("apps.alerts.notification_handlers.SendGridAPIClient")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_API_KEY", "test-api-key")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_FROM_EMAIL", "test@example.com")
+    def test_send_email_non_success_status(self, mock_sg_client):
+        """Test email sending with non-success status code"""
+        # Mock SendGrid response with non-success status (not 200/201/202)
+        mock_sg_instance = Mock()
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_sg_instance.send.return_value = mock_response
+        mock_sg_client.return_value = mock_sg_instance
+
+        alert = self.create_mock_alert()
+
+        channel = Mock(spec=NotificationChannel)
+        channel.name = "Email Channel"
+        channel.config = {"recipients": ["test@example.com"]}
+
+        notification_log = Mock(spec=Notification)
+
+        result = self.handler.send(alert, channel, notification_log)
+
+        assert result is False
+        assert "Status 400" in notification_log.error_message
+
+    @patch("apps.alerts.notification_handlers.SendGridAPIClient")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_API_KEY", "test-api-key")
+    @patch("apps.alerts.notification_handlers.settings.SENDGRID_FROM_EMAIL", "test@example.com")
+    def test_send_email_partial_success(self, mock_sg_client):
+        """Test email sending with partial success (some recipients fail)"""
+        # Mock SendGrid to succeed for first recipient, fail for second
+        mock_sg_instance = Mock()
+        mock_response_success = Mock()
+        mock_response_success.status_code = 202
+        mock_response_fail = Mock()
+        mock_response_fail.status_code = 400
+        mock_sg_instance.send.side_effect = [mock_response_success, mock_response_fail]
+        mock_sg_client.return_value = mock_sg_instance
+
+        alert = self.create_mock_alert()
+
+        channel = Mock(spec=NotificationChannel)
+        channel.name = "Email Channel"
+        channel.config = {"recipients": ["success@example.com", "fail@example.com"]}
+
+        notification_log = Mock(spec=Notification)
+
+        result = self.handler.send(alert, channel, notification_log)
+
+        # Should return True because at least one succeeded
+        assert result is True
+
 
 @pytest.mark.django_db
 class TestSlackNotificationHandler:

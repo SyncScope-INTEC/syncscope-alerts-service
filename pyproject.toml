@@ -60,9 +60,21 @@ omit = [
     "*/migrations/*",
     "*/venv/*",
     "*/virtualenv/*",
+    "*/.venv/*",
     "manage.py",
     "*/settings/*",
-    "*/tests/*"
+    "*/test_settings.py",
+    "*/tests/*",
+    "*/conftest.py",
+    "*/__init__.py",
+    "*/apps.py",
+    "*/admin.py",
+    "*/asgi.py",
+    "*/wsgi.py",
+    "*/routing.py",
+    "*/websocket_consumers.py",
+    "config/celery.py",
+    "config/urls.py"
 ]
 
 [tool.coverage.report]
