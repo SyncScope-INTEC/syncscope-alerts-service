@@ -496,8 +496,11 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
         """Test a notification channel"""
         channel = self.get_object()
 
-        # Trigger test notification asynchronously
-        task = send_test_notification.delay(str(channel.id))
+        # Get user ID from request
+        user_id = str(request.user.id) if request.user and hasattr(request.user, 'id') else None
+
+        # Trigger test notification asynchronously with user_id
+        task = send_test_notification.delay(str(channel.id), user_id=user_id)
 
         return Response(
             {

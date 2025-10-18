@@ -236,39 +236,42 @@ def cleanup_old_resolved_alerts():
 
 
 @shared_task(name="apps.alerts.tasks.test_notification_channel")
-def send_test_notification(channel_id: str, test_alert_data: dict = None):
+def send_test_notification(channel_id: str, user_id: str = None, test_alert_data: dict = None):
     """
     Test a notification channel by sending a test notification
 
     Args:
         channel_id: UUID of the notification channel to test
+        user_id: UUID of the user testing the channel
         test_alert_data: Optional test alert data
     """
     try:
-        from .models import NotificationChannel
+        from .models import NotificationChannel, AlertRule
 
         channel = NotificationChannel.objects.get(id=channel_id)
 
-        # Create a test alert (not saved to database)
-        # Using a plain object instead of AlertNotification to avoid ForeignKey validation
+        # Use provided user_id or default
+        if not user_id:
+            user_id = "00000000-0000-0000-0000-000000000000"
+
+        # Create a test AlertNotification to save to database
         if test_alert_data:
             alert = type("TestAlert", (), test_alert_data)()
         else:
-            # Create a mock alert object with all necessary attributes
-            class TestAlert:
-                id = str(uuid.uuid4())  # Generate unique ID for each test
-                title = "Test Alert Notification"
-                message = "This is a test notification from SyncScope Alerts Service. If you received this email, your notification channel is configured correctly!"
-                severity = "medium"
-                status = "pending"
-                triggered_at = timezone.now()
-
-                # Mock rule object
-                class rule:
-                    name = "Test Alert Rule"
-                    metric_type = "test"
-
-            alert = TestAlert()
+            # Create a realistic test alert message
+            test_alert = AlertNotification(
+                id=uuid.uuid4(),
+                title="System Performance Alert - Test Notification",
+                message="Your SyncScope notification channel is working correctly! This is a test alert simulating a high CPU usage scenario. In production, you would receive alerts like this when critical thresholds are exceeded on your monitored resources.",
+                severity="medium",
+                state="active",
+                triggered_at=timezone.now(),
+                company_id=channel.company_id,
+                alert_rule=None,  # Test notifications don't have an associated rule
+            )
+            # Save the test alert to database
+            test_alert.save()
+            alert = test_alert
 
         # Send test notification
         from .notification_handlers import NOTIFICATION_HANDLERS
@@ -278,28 +281,40 @@ def send_test_notification(channel_id: str, test_alert_data: dict = None):
         if not handler:
             return {"success": False, "error": f"Unsupported channel type: {channel.type}"}
 
-        # Create a dummy notification log for testing
+        # Create notification log and save it to database
         notification_log = Notification(
-            alert=None,
-            user_id="00000000-0000-0000-0000-000000000000",
+            alert=alert,
+            user_id=user_id,
             notification_type=channel.type,
+            subject=f"[{alert.severity.upper()}] {alert.title}",
             message=alert.message,
             status="pending",
         )
+        # Save before sending to ensure it's in the database
+        notification_log.save()
 
         # Add error_message as a temporary attribute for the handler to use
         notification_log.error_message = None
 
         success = handler.send(alert, channel, notification_log)
 
-        # Get error from either the temporary attribute or delivery_metadata
-        error = notification_log.error_message or notification_log.delivery_metadata.get("error")
+        # Update notification status based on send result
+        if success:
+            notification_log.mark_sent()
+        else:
+            error = notification_log.error_message or notification_log.delivery_metadata.get("error", "Unknown error")
+            notification_log.mark_failed(error)
 
-        logger.info(f"Test notification for channel {channel_id}: success={success}, error={error}")
+        # Get final error message
+        error = notification_log.delivery_metadata.get("error") if not success else None
+
+        logger.info(f"Test notification for channel {channel_id}: success={success}, error={error}, notification_id={notification_log.id}")
 
         return {
             "success": success,
             "error": error,
+            "notification_id": str(notification_log.id),
+            "alert_id": str(alert.id),
         }
 
     except NotificationChannel.DoesNotExist:
