@@ -5,17 +5,19 @@ FROM python:3.14-slim
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    C_FORCE_ROOT=true
 
 # Set work directory
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including supervisor for multi-process management
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
+    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
@@ -24,6 +26,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy project
 COPY . .
+
+# Copy supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Create staticfiles directory with proper permissions
 RUN mkdir -p /app/staticfiles
