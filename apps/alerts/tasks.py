@@ -246,7 +246,7 @@ def send_test_notification(channel_id: str, user_id: str = None, test_alert_data
         test_alert_data: Optional test alert data
     """
     try:
-        from .models import NotificationChannel, AlertRule
+        from .models import AlertRule, NotificationChannel
 
         channel = NotificationChannel.objects.get(id=channel_id)
 
@@ -308,7 +308,9 @@ def send_test_notification(channel_id: str, user_id: str = None, test_alert_data
         # Get final error message
         error = notification_log.delivery_metadata.get("error") if not success else None
 
-        logger.info(f"Test notification for channel {channel_id}: success={success}, error={error}, notification_id={notification_log.id}")
+        logger.info(
+            f"Test notification for channel {channel_id}: success={success}, error={error}, notification_id={notification_log.id}"
+        )
 
         return {
             "success": success,
