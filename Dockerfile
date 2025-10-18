@@ -36,15 +36,16 @@ RUN mkdir -p /app/staticfiles
 # Create start script that collects static files at runtime
 COPY --chown=appuser:appuser start.sh /app/start.sh
 
-# Create non-root user
+# Create non-root user (supervisord will run child processes as this user)
 RUN groupadd -r appuser && useradd -r -g appuser appuser \
     && chown -R appuser:appuser /app \
     && chmod +x /app/start.sh
 
-USER appuser
+# Note: We don't switch to USER appuser here because supervisord needs root
+# privileges to manage processes. It will run child processes as appuser.
 
 # Expose port (Railway will override this with PORT env var)
 EXPOSE 8080
 
-# Run start script
+# Run start script (runs as root, which starts supervisord)
 CMD ["/app/start.sh"]
