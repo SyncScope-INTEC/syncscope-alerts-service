@@ -325,6 +325,7 @@ class TestRetryFailedNotifications:
         notification.mark_retrying = Mock()
         notification.alert = Mock(spec=AlertNotification)
         notification.channel = Mock(spec=NotificationChannel)
+        notification.delivery_metadata = {"retry_count": 0}  # Mock delivery_metadata as dict
 
         mock_filter.return_value = [notification]
 
@@ -353,6 +354,7 @@ class TestRetryFailedNotifications:
         notification.mark_retrying = Mock()
         notification.alert = Mock(spec=AlertNotification)
         notification.channel = Mock(spec=NotificationChannel)
+        notification.delivery_metadata = {"retry_count": 1}  # Mock delivery_metadata as dict
 
         mock_filter.return_value = [notification]
 
@@ -376,6 +378,7 @@ class TestRetryFailedNotifications:
         # Mock failed notification
         notification = Mock(spec=Notification)
         notification.id = uuid.uuid4()
+        notification.delivery_metadata = {"retry_count": 0}  # Mock delivery_metadata as dict
         notification.mark_retrying = Mock(side_effect=Exception("Retry error"))
 
         mock_filter.return_value = [notification]
