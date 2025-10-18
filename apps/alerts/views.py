@@ -167,7 +167,12 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(tags=["Alert Rules"], summary="Test alert rule evaluation")
+    @extend_schema(
+        tags=["Alert Rules"],
+        summary="Test alert rule evaluation",
+        request=AlertRuleTestSerializer,
+        responses={202: {"type": "object", "properties": {"message": {"type": "string"}, "task_id": {"type": "string"}}}},
+    )
     @action(detail=True, methods=["post"])
     def test(self, request, pk=None):
         """Test an alert rule with optional test data"""
@@ -189,7 +194,11 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_202_ACCEPTED,
         )
 
-    @extend_schema(tags=["Alert Rules"], summary="Activate alert rule")
+    @extend_schema(
+        tags=["Alert Rules"],
+        summary="Activate alert rule",
+        responses={200: {"type": "object", "properties": {"message": {"type": "string"}, "is_active": {"type": "boolean"}}}},
+    )
     @action(detail=True, methods=["post"])
     def activate(self, request, pk=None):
         """Activate an alert rule"""
@@ -202,7 +211,11 @@ class AlertRuleViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(tags=["Alert Rules"], summary="Deactivate alert rule")
+    @extend_schema(
+        tags=["Alert Rules"],
+        summary="Deactivate alert rule",
+        responses={200: {"type": "object", "properties": {"message": {"type": "string"}, "is_active": {"type": "boolean"}}}},
+    )
     @action(detail=True, methods=["post"])
     def deactivate(self, request, pk=None):
         """Deactivate an alert rule"""
@@ -261,7 +274,14 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             return AlertDetailSerializer
         return AlertSerializer
 
-    @extend_schema(tags=["Alerts"], summary="Acknowledge one or more alerts")
+    @extend_schema(
+        tags=["Alerts"],
+        summary="Acknowledge one or more alerts",
+        request=AlertAcknowledgeSerializer,
+        responses={
+            200: {"type": "object", "properties": {"message": {"type": "string"}, "acknowledged_count": {"type": "integer"}}}
+        },
+    )
     @action(detail=False, methods=["post"])
     def acknowledge(self, request):
         """Acknowledge one or more alerts"""
@@ -293,7 +313,14 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(tags=["Alerts"], summary="Resolve one or more alerts")
+    @extend_schema(
+        tags=["Alerts"],
+        summary="Resolve one or more alerts",
+        request=AlertResolveSerializer,
+        responses={
+            200: {"type": "object", "properties": {"message": {"type": "string"}, "resolved_count": {"type": "integer"}}}
+        },
+    )
     @action(detail=False, methods=["post"])
     def resolve(self, request):
         """Resolve one or more alerts"""
@@ -325,7 +352,14 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(tags=["Alerts"], summary="Mute a specific alert")
+    @extend_schema(
+        tags=["Alerts"],
+        summary="Mute a specific alert",
+        responses={
+            200: {"type": "object", "properties": {"message": {"type": "string"}, "status": {"type": "string"}}},
+            403: {"type": "object", "properties": {"error": {"type": "string"}}},
+        },
+    )
     @action(detail=True, methods=["post"])
     def mute(self, request, pk=None):
         """Mute a specific alert"""
@@ -345,7 +379,11 @@ class AlertViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
-    @extend_schema(tags=["Alerts"], summary="Get alert statistics")
+    @extend_schema(
+        tags=["Alerts"],
+        summary="Get alert statistics",
+        responses={200: AlertStatisticsSerializer},
+    )
     @action(detail=False, methods=["get"])
     def statistics(self, request):
         """Get alert statistics for the company"""
@@ -448,7 +486,11 @@ class NotificationChannelViewSet(ServerlessViewMixin, viewsets.ModelViewSet):
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    @extend_schema(tags=["Notification Channels"], summary="Test notification channel")
+    @extend_schema(
+        tags=["Notification Channels"],
+        summary="Test notification channel",
+        responses={202: {"type": "object", "properties": {"message": {"type": "string"}, "task_id": {"type": "string"}}}},
+    )
     @action(detail=True, methods=["post"])
     def test(self, request, pk=None):
         """Test a notification channel"""
