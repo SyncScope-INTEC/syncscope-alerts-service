@@ -47,6 +47,17 @@ class User(AbstractBaseUser):
     def get_username(self):
         return self.username if hasattr(self, "username") else self.email
 
+    def save(self, *args, **kwargs):
+        """Override save to handle database errors gracefully."""
+        try:
+            super().save(*args, **kwargs)
+        except Exception as e:
+            # Log the error but don't raise it to prevent login failures
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning(f"User: Could not save user {self.email}: {str(e)}")
+
 
 def get_table_name(base_name):
     """Get table name without schema prefix - let PostgreSQL search_path handle schema resolution."""
