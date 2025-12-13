@@ -85,6 +85,7 @@ class ServerlessViewMixin:
 
     def dispatch(self, request, *args, **kwargs):
         from django.http import JsonResponse
+
         from config.database_retry import DatabaseHealthCheck, close_old_connections
 
         # Check database health before processing request
