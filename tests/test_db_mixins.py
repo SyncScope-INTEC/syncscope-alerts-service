@@ -210,6 +210,7 @@ class TestServerlessViewMixin:
         assert isinstance(result, JsonResponse)
         assert result.status_code == 503
         import json
+
         content = json.loads(result.content)
         assert "error" in content
         mock_close.assert_called_once()
