@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 from django.db import OperationalError
+from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory
@@ -206,9 +207,11 @@ class TestServerlessViewMixin:
         request = Mock()
         result = view.dispatch(request)
 
-        assert isinstance(result, Response)
+        assert isinstance(result, JsonResponse)
         assert result.status_code == 503
-        assert "error" in result.data
+        import json
+        content = json.loads(result.content)
+        assert "error" in content
         mock_close.assert_called_once()
 
     @patch("config.database_retry.is_retryable_error")
