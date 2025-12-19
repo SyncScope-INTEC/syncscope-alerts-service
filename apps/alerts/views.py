@@ -600,9 +600,7 @@ def send_password_reset_email(request):
         sendgrid_api_key = getattr(settings, "SENDGRID_API_KEY", None)
         if not sendgrid_api_key:
             logger.error("SENDGRID_API_KEY not configured")
-            return Response(
-                {"error": "Email service not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": "Email service not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # Get sender email
         from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
@@ -654,9 +652,7 @@ The SyncScope Team
             return Response({"message": "Password reset email sent successfully"}, status=status.HTTP_200_OK)
         else:
             logger.error(f"SendGrid returned status {response.status_code}")
-            return Response(
-                {"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except Exception as e:
         logger.error(f"Error sending password reset email: {str(e)}")
