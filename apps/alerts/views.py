@@ -544,3 +544,120 @@ class NotificationLogViewSet(ServerlessViewMixin, viewsets.ReadOnlyModelViewSet)
             queryset = queryset.filter(alert_id=alert_id)
 
         return queryset.order_by("-created_at")
+
+
+@extend_schema(
+    tags=["Password Reset"],
+    summary="Send password reset email",
+    description="Internal endpoint for auth-service to send password reset emails. No authentication required as this is for internal service communication.",
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "user_email": {"type": "string", "format": "email"},
+                "user_name": {"type": "string"},
+                "reset_code": {"type": "string", "minLength": 6, "maxLength": 6},
+                "frontend_url": {"type": "string", "format": "uri"},
+            },
+            "required": ["user_email", "user_name", "reset_code", "frontend_url"],
+        }
+    },
+    responses={
+        200: {"description": "Email sent successfully"},
+        400: {"description": "Invalid request"},
+        500: {"description": "Failed to send email"},
+    },
+)
+@api_view(["POST"])
+@permission_classes([])  # No authentication for internal service calls
+def send_password_reset_email(request):
+    """
+    Send password reset email with 6-digit code
+    Called by auth-service when user requests password reset
+    """
+    from django.conf import settings
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+
+    # Validate required fields
+    user_email = request.data.get("user_email")
+    user_name = request.data.get("user_name")
+    reset_code = request.data.get("reset_code")
+    frontend_url = request.data.get("frontend_url")
+
+    if not all([user_email, user_name, reset_code, frontend_url]):
+        return Response(
+            {"error": "Missing required fields: user_email, user_name, reset_code, frontend_url"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate reset code is 6 digits
+    if not reset_code.isdigit() or len(reset_code) != 6:
+        return Response({"error": "Reset code must be exactly 6 digits"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Get SendGrid API key
+        sendgrid_api_key = getattr(settings, "SENDGRID_API_KEY", None)
+        if not sendgrid_api_key:
+            logger.error("SENDGRID_API_KEY not configured")
+            return Response(
+                {"error": "Email service not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        # Get sender email
+        from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
+
+        # Prepare email content using template
+        template = loader.get_template("alerts/password_reset_email.html")
+        html_content = template.render(
+            {
+                "user_name": user_name,
+                "reset_code": reset_code,
+                "frontend_url": frontend_url,
+                "user_email": user_email,
+                "expiration_hours": 1,
+            }
+        )
+
+        # Plain text version
+        plain_content = f"""
+Hello {user_name},
+
+You requested to reset your password for your SyncScope account.
+
+Your password reset code is: {reset_code}
+
+To reset your password, visit: {frontend_url}/auth/verify-reset-code?email={user_email}
+
+This code will expire in 1 hour.
+
+If you didn't request this password reset, please ignore this email.
+
+Best regards,
+The SyncScope Team
+        """.strip()
+
+        # Send email
+        message = Mail(
+            from_email=from_email,
+            to_emails=user_email,
+            subject="Reset Your SyncScope Password",
+            plain_text_content=plain_content,
+            html_content=html_content,
+        )
+
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Password reset email sent to {user_email}")
+            return Response({"message": "Password reset email sent successfully"}, status=status.HTTP_200_OK)
+        else:
+            logger.error(f"SendGrid returned status {response.status_code}")
+            return Response(
+                {"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    except Exception as e:
+        logger.error(f"Error sending password reset email: {str(e)}")
+        return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

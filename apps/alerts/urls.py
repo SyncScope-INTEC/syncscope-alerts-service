@@ -10,6 +10,7 @@ from .views import (
     AlertViewSet,
     NotificationChannelViewSet,
     NotificationLogViewSet,
+    send_password_reset_email,
 )
 
 router = DefaultRouter()
@@ -22,4 +23,6 @@ router.register(r"", AlertViewSet, basename="alerts")
 
 urlpatterns = [
     path("", include(router.urls)),
+    # Password reset email endpoint (internal service use)
+    path("send-password-reset-email/", send_password_reset_email, name="send_password_reset_email"),
 ]
