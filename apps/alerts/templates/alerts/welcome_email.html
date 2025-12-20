@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to SyncScope - Your Account is Ready!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f4f4f7;
+            color: #51545e;
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #f4f4f7;
+            padding: 40px 0;
+        }
+        .email-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .email-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+        .email-body {
+            padding: 40px 30px;
+        }
+        h1 {
+            color: #22292f;
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 20px;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #51545e;
+            margin: 0 0 20px;
+        }
+        .credentials-container {
+            background-color: #f8f9fa;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+        .credential-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .credential-row:last-child {
+            border-bottom: none;
+        }
+        .credential-label {
+            font-size: 14px;
+            color: #6c757d;
+            font-weight: 600;
+        }
+        .credential-value {
+            font-size: 16px;
+            color: #22292f;
+            font-weight: 500;
+            font-family: 'Courier New', monospace;
+        }
+        .button {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            text-decoration: none;
+            padding: 14px 32px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin: 20px 0;
+            transition: transform 0.2s;
+        }
+        .button:hover {
+            transform: translateY(-2px);
+        }
+        .info-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .info-box p {
+            margin: 0;
+            color: #856404;
+            font-size: 14px;
+        }
+        .success-box {
+            background-color: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .success-box p {
+            margin: 0;
+            color: #0c5460;
+            font-size: 14px;
+        }
+        .steps {
+            margin: 20px 0;
+        }
+        .step {
+            display: flex;
+            margin-bottom: 15px;
+        }
+        .step-number {
+            min-width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+        .step-content {
+            flex: 1;
+            padding-top: 4px;
+        }
+        .email-footer {
+            background-color: #f8f9fa;
+            padding: 30px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+        }
+        .email-footer p {
+            font-size: 14px;
+            color: #6c757d;
+            margin: 5px 0;
+        }
+        .divider {
+            height: 1px;
+            background-color: #e9ecef;
+            margin: 30px 0;
+        }
+        @media only screen and (max-width: 600px) {
+            .email-content {
+                margin: 0 20px;
+            }
+            .email-body {
+                padding: 30px 20px;
+            }
+            .credential-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .credential-value {
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-content">
+            <div class="email-header">
+                <h1 class="logo">SyncScope</h1>
+            </div>
+
+            <div class="email-body">
+                <h1>🎉 Welcome to SyncScope!</h1>
+
+                <p>Hello {{ user_name }},</p>
+
+                <p>Thank you for subscribing to <strong>{{ plan }}</strong>! Your account has been created successfully and you're all set to start monitoring productivity.</p>
+
+                <div class="success-box">
+                    <p><strong>✅ Your account is ready to use!</strong></p>
+                </div>
+
+                <h2 style="color: #22292f; font-size: 20px; margin: 30px 0 15px;">Your Login Credentials</h2>
+
+                <div class="credentials-container">
+                    <div class="credential-row">
+                        <span class="credential-label">Email:</span>
+                        <span class="credential-value">{{ user_email }}</span>
+                    </div>
+                    <div class="credential-row">
+                        <span class="credential-label">Temporary Password:</span>
+                        <span class="credential-value">{{ temp_password }}</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <p><strong>🔒 Important Security Notice:</strong> This is a temporary password. You will be required to change it on your first login.</p>
+                </div>
+
+                <h2 style="color: #22292f; font-size: 20px; margin: 30px 0 15px;">Getting Started</h2>
+
+                <div class="steps">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">Click the button below or visit {{ frontend_url }}/auth/login</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">Log in with your email and the temporary password above</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">Set a new, secure password when prompted</div>
+                    </div>
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">Start exploring SyncScope's powerful features!</div>
+                    </div>
+                </div>
+
+                <p style="text-align: center;">
+                    <a href="{{ login_url }}" class="button">
+                        Log In to SyncScope
+                    </a>
+                </p>
+
+                <div class="divider"></div>
+
+                <h2 style="color: #22292f; font-size: 20px; margin: 30px 0 15px;">What's Next?</h2>
+
+                <p>Once you're logged in, you can:</p>
+                <ul style="line-height: 1.8; color: #51545e;">
+                    <li>Set up your profile and preferences</li>
+                    <li>Configure productivity monitoring</li>
+                    <li>Invite team members</li>
+                    <li>Explore analytics and reports</li>
+                    <li>Customize alerts and notifications</li>
+                </ul>
+
+                <div class="divider"></div>
+
+                <p style="font-size: 14px; color: #6c757d;">
+                    <strong>Need Help?</strong><br>
+                    If you have any questions or need assistance, our support team is here to help. Visit our support center or reply to this email.
+                </p>
+
+                <p style="font-size: 14px; color: #6c757d;">
+                    <strong>Security Tip:</strong><br>
+                    Never share your password with anyone. SyncScope will never ask for your password via email or phone.
+                </p>
+            </div>
+
+            <div class="email-footer">
+                <p><strong>SyncScope</strong></p>
+                <p>Your Productivity Monitoring Platform</p>
+                <p style="margin-top: 15px;">
+                    <a href="{{ frontend_url }}" style="color: #667eea; text-decoration: none;">Visit SyncScope</a> •
+                    <a href="{{ frontend_url }}/support" style="color: #667eea; text-decoration: none;">Get Support</a> •
+                    <a href="{{ frontend_url }}/docs" style="color: #667eea; text-decoration: none;">Documentation</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

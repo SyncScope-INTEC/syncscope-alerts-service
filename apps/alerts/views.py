@@ -657,3 +657,108 @@ The SyncScope Team
     except Exception as e:
         logger.error(f"Error sending password reset email: {str(e)}")
         return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([])
+def send_welcome_email(request):
+    """
+    Send welcome email with temporary password to new user
+    Called by auth-service when setting up account after Stripe payment
+    """
+    from django.conf import settings
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+
+    # Validate required fields
+    user_email = request.data.get("user_email")
+    user_name = request.data.get("user_name")
+    temp_password = request.data.get("temp_password")
+    plan = request.data.get("plan", "starter")
+    frontend_url = request.data.get("frontend_url")
+
+    if not all([user_email, user_name, temp_password, frontend_url]):
+        return Response(
+            {"error": "Missing required fields: user_email, user_name, temp_password, frontend_url"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        # Get SendGrid API key
+        sendgrid_api_key = getattr(settings, "SENDGRID_API_KEY", None)
+        if not sendgrid_api_key:
+            logger.error("SENDGRID_API_KEY not configured")
+            return Response({"error": "Email service not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Get sender email
+        from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
+
+        # Plan display names
+        plan_names = {
+            "starter": "Starter Plan",
+            "growth": "Growth Plan",
+            "enterprise": "Enterprise Plan",
+        }
+        plan_display = plan_names.get(plan, "Starter Plan")
+
+        # Prepare email content using template
+        template = loader.get_template("alerts/welcome_email.html")
+        html_content = template.render(
+            {
+                "user_name": user_name,
+                "temp_password": temp_password,
+                "plan": plan_display,
+                "frontend_url": frontend_url,
+                "user_email": user_email,
+                "login_url": f"{frontend_url}/auth/login",
+            }
+        )
+
+        # Plain text version
+        plain_content = f"""
+Welcome to SyncScope, {user_name}!
+
+Thank you for subscribing to the {plan_display}.
+
+Your account has been created successfully. Here are your login credentials:
+
+Email: {user_email}
+Temporary Password: {temp_password}
+
+IMPORTANT: You will be required to change this password on your first login for security reasons.
+
+To get started:
+1. Visit: {frontend_url}/auth/login
+2. Log in with your email and the temporary password above
+3. Set a new, secure password when prompted
+
+If you have any questions or need assistance, please don't hesitate to reach out to our support team.
+
+Welcome aboard!
+
+Best regards,
+The SyncScope Team
+        """.strip()
+
+        # Send email
+        message = Mail(
+            from_email=from_email,
+            to_emails=user_email,
+            subject=f"Welcome to SyncScope - Your {plan_display} Account is Ready!",
+            plain_text_content=plain_content,
+            html_content=html_content,
+        )
+
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Welcome email sent to {user_email}")
+            return Response({"message": "Welcome email sent successfully"}, status=status.HTTP_200_OK)
+        else:
+            logger.error(f"SendGrid returned status {response.status_code}")
+            return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except Exception as e:
+        logger.error(f"Error sending welcome email: {str(e)}")
+        return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

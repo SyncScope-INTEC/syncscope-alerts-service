@@ -11,6 +11,7 @@ from .views import (
     NotificationChannelViewSet,
     NotificationLogViewSet,
     send_password_reset_email,
+    send_welcome_email,
 )
 
 router = DefaultRouter()
@@ -25,4 +26,6 @@ urlpatterns = [
     path("", include(router.urls)),
     # Password reset email endpoint (internal service use)
     path("send-password-reset-email/", send_password_reset_email, name="send_password_reset_email"),
+    # Welcome email endpoint (internal service use)
+    path("send-welcome-email/", send_welcome_email, name="send_welcome_email"),
 ]
