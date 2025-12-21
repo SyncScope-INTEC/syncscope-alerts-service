@@ -659,6 +659,29 @@ The SyncScope Team
         return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+@extend_schema(
+    tags=["Welcome Email"],
+    summary="Send welcome email with temporary password",
+    description="Internal endpoint for auth-service to send welcome emails to new users after Stripe payment. No authentication required as this is for internal service communication.",
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "user_email": {"type": "string", "format": "email"},
+                "user_name": {"type": "string"},
+                "temp_password": {"type": "string"},
+                "plan": {"type": "string", "enum": ["starter", "growth", "enterprise"], "default": "starter"},
+                "frontend_url": {"type": "string", "format": "uri"},
+            },
+            "required": ["user_email", "user_name", "temp_password", "frontend_url"],
+        }
+    },
+    responses={
+        200: {"description": "Email sent successfully"},
+        400: {"description": "Invalid request"},
+        500: {"description": "Failed to send email"},
+    },
+)
 @api_view(["POST"])
 @permission_classes([])
 def send_welcome_email(request):
@@ -761,4 +784,154 @@ The SyncScope Team
 
     except Exception as e:
         logger.error(f"Error sending welcome email: {str(e)}")
+        return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@extend_schema(
+    tags=["Company Invitation"],
+    summary="Send company invitation email",
+    description="Internal endpoint for auth-service to send company invitation emails. No authentication required as this is for internal service communication.",
+    request={
+        "application/json": {
+            "type": "object",
+            "properties": {
+                "invitee_email": {"type": "string", "format": "email"},
+                "inviter_name": {"type": "string"},
+                "inviter_email": {"type": "string", "format": "email"},
+                "company_name": {"type": "string"},
+                "role": {"type": "string", "enum": ["admin", "supervisor", "developer"], "default": "developer"},
+                "invitation_token": {"type": "string"},
+                "frontend_url": {"type": "string", "format": "uri"},
+                "expiration_days": {"type": "integer", "default": 7},
+            },
+            "required": ["invitee_email", "inviter_name", "inviter_email", "company_name", "invitation_token", "frontend_url"],
+        }
+    },
+    responses={
+        200: {"description": "Email sent successfully"},
+        400: {"description": "Invalid request"},
+        500: {"description": "Failed to send email"},
+    },
+)
+@api_view(["POST"])
+@permission_classes([])
+def send_company_invitation_email(request):
+    """
+    Send company invitation email to invite employees to join a company
+    Called by auth-service when a company user invites a new team member
+    """
+    from django.conf import settings
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+
+    # Validate required fields
+    invitee_email = request.data.get("invitee_email")
+    inviter_name = request.data.get("inviter_name")
+    inviter_email = request.data.get("inviter_email")
+    company_name = request.data.get("company_name")
+    role = request.data.get("role", "developer")
+    invitation_token = request.data.get("invitation_token")
+    frontend_url = request.data.get("frontend_url")
+    expiration_days = request.data.get("expiration_days", 7)
+
+    if not all([invitee_email, inviter_name, inviter_email, company_name, invitation_token, frontend_url]):
+        return Response(
+            {"error": "Missing required fields: invitee_email, inviter_name, inviter_email, company_name, invitation_token, frontend_url"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate role
+    valid_roles = ["admin", "supervisor", "developer"]
+    if role not in valid_roles:
+        return Response({"error": f"Invalid role. Must be one of: {', '.join(valid_roles)}"}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Get SendGrid API key
+        sendgrid_api_key = getattr(settings, "SENDGRID_API_KEY", None)
+        if not sendgrid_api_key:
+            logger.error("SENDGRID_API_KEY not configured")
+            return Response({"error": "Email service not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Get sender email
+        from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
+
+        # Role display names
+        role_names = {
+            "admin": "Admin",
+            "supervisor": "Supervisor",
+            "developer": "Developer",
+        }
+        role_display = role_names.get(role, "Developer")
+
+        # Build invitation URL
+        invitation_url = f"{frontend_url}/auth/accept-invitation?token={invitation_token}"
+
+        # Prepare email content using template
+        template = loader.get_template("alerts/company_invitation_email.html")
+        html_content = template.render(
+            {
+                "invitee_email": invitee_email,
+                "inviter_name": inviter_name,
+                "inviter_email": inviter_email,
+                "company_name": company_name,
+                "role": role_display,
+                "invitation_url": invitation_url,
+                "invitation_token": invitation_token,
+                "frontend_url": frontend_url,
+                "expiration_days": expiration_days,
+            }
+        )
+
+        # Plain text version
+        plain_content = f"""
+You're Invited to Join {company_name} on SyncScope!
+
+Hello {invitee_email},
+
+{inviter_name} from {company_name} has invited you to join their team on SyncScope as a {role_display}.
+
+To accept this invitation:
+1. Click the link below or copy it into your browser
+2. Sign in with your GitHub account (or create one if needed)
+3. Your account will automatically be linked to {company_name}
+4. Start collaborating with your team!
+
+Invitation Link: {invitation_url}
+
+This invitation will expire in {expiration_days} days.
+
+What is SyncScope?
+SyncScope is a productivity monitoring platform that helps teams track progress, analyze productivity patterns, and improve collaboration.
+
+Didn't expect this invitation?
+If you believe you received this email by mistake, you can safely ignore it. No account will be created if you don't accept the invitation.
+
+Need Help?
+If you have questions about this invitation, feel free to contact {inviter_name} at {inviter_email} or reach out to our support team.
+
+Best regards,
+The SyncScope Team
+        """.strip()
+
+        # Send email
+        message = Mail(
+            from_email=from_email,
+            to_emails=invitee_email,
+            subject=f"You've Been Invited to Join {company_name} on SyncScope",
+            plain_text_content=plain_content,
+            html_content=html_content,
+        )
+
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Company invitation email sent to {invitee_email}")
+            return Response({"message": "Company invitation email sent successfully"}, status=status.HTTP_200_OK)
+        else:
+            logger.error(f"SendGrid returned status {response.status_code}")
+            return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except Exception as e:
+        logger.error(f"Error sending company invitation email: {str(e)}")
         return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
