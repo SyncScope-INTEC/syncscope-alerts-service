@@ -836,14 +836,18 @@ def send_company_invitation_email(request):
 
     if not all([invitee_email, inviter_name, inviter_email, company_name, invitation_token, frontend_url]):
         return Response(
-            {"error": "Missing required fields: invitee_email, inviter_name, inviter_email, company_name, invitation_token, frontend_url"},
+            {
+                "error": "Missing required fields: invitee_email, inviter_name, inviter_email, company_name, invitation_token, frontend_url"
+            },
             status=status.HTTP_400_BAD_REQUEST,
         )
 
     # Validate role
     valid_roles = ["admin", "supervisor", "developer"]
     if role not in valid_roles:
-        return Response({"error": f"Invalid role. Must be one of: {', '.join(valid_roles)}"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": f"Invalid role. Must be one of: {', '.join(valid_roles)}"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
     try:
         # Get SendGrid API key
