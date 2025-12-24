@@ -444,8 +444,10 @@ class TestProjectInvitationEmail:
     """Tests for project invitation email endpoint"""
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_success(self, mock_sendgrid, api_client):
+    @patch("apps.alerts.authentication.JWTAuthentication.authenticate")
+    def test_send_project_invitation_email_success(self, mock_auth, mock_sendgrid, api_client):
         """Test sending project invitation email successfully"""
+        mock_auth.return_value = None  # Bypass authentication
         mock_response = Mock()
         mock_response.status_code = 202
         mock_sendgrid.return_value.send.return_value = mock_response
@@ -469,8 +471,10 @@ class TestProjectInvitationEmail:
         mock_sendgrid.return_value.send.assert_called_once()
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_supervisor_role(self, mock_sendgrid, api_client):
+    @patch("apps.alerts.authentication.JWTAuthentication.authenticate")
+    def test_send_project_invitation_email_supervisor_role(self, mock_auth, mock_sendgrid, api_client):
         """Test sending project invitation email with supervisor role"""
+        mock_auth.return_value = None  # Bypass authentication
         mock_response = Mock()
         mock_response.status_code = 202
         mock_sendgrid.return_value.send.return_value = mock_response
@@ -492,8 +496,10 @@ class TestProjectInvitationEmail:
         mock_sendgrid.return_value.send.assert_called_once()
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_missing_fields(self, mock_sendgrid, api_client):
+    @patch("apps.alerts.authentication.JWTAuthentication.authenticate")
+    def test_send_project_invitation_email_missing_fields(self, mock_auth, mock_sendgrid, api_client):
         """Test sending project invitation email with missing required fields"""
+        mock_auth.return_value = None  # Bypass authentication
         data = {
             "invitee_email": "user@example.com",
             "inviter_name": "Test User",
@@ -506,8 +512,10 @@ class TestProjectInvitationEmail:
         assert "error" in response.data
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_invalid_role(self, mock_sendgrid, api_client):
+    @patch("apps.alerts.authentication.JWTAuthentication.authenticate")
+    def test_send_project_invitation_email_invalid_role(self, mock_auth, mock_sendgrid, api_client):
         """Test sending project invitation email with invalid role"""
+        mock_auth.return_value = None  # Bypass authentication
         data = {
             "invitee_email": "user@example.com",
             "inviter_name": "Test User",
@@ -525,8 +533,10 @@ class TestProjectInvitationEmail:
         assert "error" in response.data
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_sendgrid_failure(self, mock_sendgrid, api_client):
+    @patch("apps.alerts.authentication.JWTAuthentication.authenticate")
+    def test_send_project_invitation_email_sendgrid_failure(self, mock_auth, mock_sendgrid, api_client):
         """Test handling SendGrid failure"""
+        mock_auth.return_value = None  # Bypass authentication
         mock_response = Mock()
         mock_response.status_code = 500
         mock_sendgrid.return_value.send.return_value = mock_response
@@ -548,8 +558,10 @@ class TestProjectInvitationEmail:
         assert "error" in response.data
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_custom_expiration(self, mock_sendgrid, api_client):
+    @patch("apps.alerts.authentication.JWTAuthentication.authenticate")
+    def test_send_project_invitation_email_custom_expiration(self, mock_auth, mock_sendgrid, api_client):
         """Test sending project invitation email with custom expiration days"""
+        mock_auth.return_value = None  # Bypass authentication
         mock_response = Mock()
         mock_response.status_code = 202
         mock_sendgrid.return_value.send.return_value = mock_response
