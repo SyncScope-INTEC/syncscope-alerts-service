@@ -6,7 +6,6 @@ import uuid
 from unittest.mock import Mock, patch
 
 import pytest
-from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -76,6 +75,16 @@ def notification_channel(company_id):
         is_active=True,
         company_id=company_id,
     )
+
+
+@pytest.fixture
+def api_client_no_auth(settings):
+    """Fixture for API client without authentication"""
+    settings.REST_FRAMEWORK = {
+        "DEFAULT_AUTHENTICATION_CLASSES": [],
+        "DEFAULT_PERMISSION_CLASSES": [],
+    }
+    return APIClient()
 
 
 @pytest.mark.django_db
@@ -441,17 +450,11 @@ class TestNotificationLogViewSet:
 
 
 @pytest.mark.django_db
-@override_settings(
-    REST_FRAMEWORK={
-        "DEFAULT_AUTHENTICATION_CLASSES": [],
-        "DEFAULT_PERMISSION_CLASSES": [],
-    }
-)
 class TestProjectInvitationEmail:
     """Tests for project invitation email endpoint"""
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_success(self, mock_sendgrid, api_client):
+    def test_send_project_invitation_email_success(self, mock_sendgrid, api_client_no_auth):
         """Test sending project invitation email successfully"""
         mock_response = Mock()
         mock_response.status_code = 202
@@ -469,14 +472,14 @@ class TestProjectInvitationEmail:
             "expiration_days": 7,
         }
 
-        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+        response = api_client_no_auth.post("/alerts/send-project-invitation-email/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         assert response.data["message"] == "Project invitation email sent successfully"
         mock_sendgrid.return_value.send.assert_called_once()
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_supervisor_role(self, mock_sendgrid, api_client):
+    def test_send_project_invitation_email_supervisor_role(self, mock_sendgrid, api_client_no_auth):
         """Test sending project invitation email with supervisor role"""
         mock_response = Mock()
         mock_response.status_code = 202
@@ -493,13 +496,13 @@ class TestProjectInvitationEmail:
             "frontend_url": "http://localhost:3000",
         }
 
-        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+        response = api_client_no_auth.post("/alerts/send-project-invitation-email/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         mock_sendgrid.return_value.send.assert_called_once()
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_missing_fields(self, mock_sendgrid, api_client):
+    def test_send_project_invitation_email_missing_fields(self, mock_sendgrid, api_client_no_auth):
         """Test sending project invitation email with missing required fields"""
         data = {
             "invitee_email": "user@example.com",
@@ -507,13 +510,13 @@ class TestProjectInvitationEmail:
             # Missing other required fields
         }
 
-        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+        response = api_client_no_auth.post("/alerts/send-project-invitation-email/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "error" in response.data
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_invalid_role(self, mock_sendgrid, api_client):
+    def test_send_project_invitation_email_invalid_role(self, mock_sendgrid, api_client_no_auth):
         """Test sending project invitation email with invalid role"""
         data = {
             "invitee_email": "user@example.com",
@@ -526,13 +529,13 @@ class TestProjectInvitationEmail:
             "frontend_url": "http://localhost:3000",
         }
 
-        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+        response = api_client_no_auth.post("/alerts/send-project-invitation-email/", data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "error" in response.data
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_sendgrid_failure(self, mock_sendgrid, api_client):
+    def test_send_project_invitation_email_sendgrid_failure(self, mock_sendgrid, api_client_no_auth):
         """Test handling SendGrid failure"""
         mock_response = Mock()
         mock_response.status_code = 500
@@ -549,13 +552,13 @@ class TestProjectInvitationEmail:
             "frontend_url": "http://localhost:3000",
         }
 
-        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+        response = api_client_no_auth.post("/alerts/send-project-invitation-email/", data, format="json")
 
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "error" in response.data
 
     @patch("sendgrid.SendGridAPIClient")
-    def test_send_project_invitation_email_custom_expiration(self, mock_sendgrid, api_client):
+    def test_send_project_invitation_email_custom_expiration(self, mock_sendgrid, api_client_no_auth):
         """Test sending project invitation email with custom expiration days"""
         mock_response = Mock()
         mock_response.status_code = 202
@@ -573,7 +576,7 @@ class TestProjectInvitationEmail:
             "expiration_days": 14,
         }
 
-        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+        response = api_client_no_auth.post("/alerts/send-project-invitation-email/", data, format="json")
 
         assert response.status_code == status.HTTP_200_OK
         mock_sendgrid.return_value.send.assert_called_once()
