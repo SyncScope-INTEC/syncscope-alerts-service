@@ -154,7 +154,7 @@ if not USE_SQLITE:
 
     DATABASES["default"].update(
         {
-            "CONN_MAX_AGE": 600,  # Persist connections for 10 minutes (we're using supervisord, not serverless)
+            "CONN_MAX_AGE": 0,  # Don't persist connections in serverless
             "CONN_HEALTH_CHECKS": True,
             "OPTIONS": db_options,
         }
