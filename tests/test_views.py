@@ -443,7 +443,7 @@ class TestNotificationLogViewSet:
 class TestProjectInvitationEmail:
     """Tests for project invitation email endpoint"""
 
-    @patch("apps.alerts.views.SendGridAPIClient")
+    @patch("sendgrid.SendGridAPIClient")
     def test_send_project_invitation_email_success(self, mock_sendgrid, api_client):
         """Test sending project invitation email successfully"""
         mock_response = Mock()
@@ -468,7 +468,7 @@ class TestProjectInvitationEmail:
         assert response.data["message"] == "Project invitation email sent successfully"
         mock_sendgrid.return_value.send.assert_called_once()
 
-    @patch("apps.alerts.views.SendGridAPIClient")
+    @patch("sendgrid.SendGridAPIClient")
     def test_send_project_invitation_email_supervisor_role(self, mock_sendgrid, api_client):
         """Test sending project invitation email with supervisor role"""
         mock_response = Mock()
@@ -491,7 +491,8 @@ class TestProjectInvitationEmail:
         assert response.status_code == status.HTTP_200_OK
         mock_sendgrid.return_value.send.assert_called_once()
 
-    def test_send_project_invitation_email_missing_fields(self, api_client):
+    @patch("sendgrid.SendGridAPIClient")
+    def test_send_project_invitation_email_missing_fields(self, mock_sendgrid, api_client):
         """Test sending project invitation email with missing required fields"""
         data = {
             "invitee_email": "user@example.com",
@@ -504,7 +505,8 @@ class TestProjectInvitationEmail:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "error" in response.data
 
-    def test_send_project_invitation_email_invalid_role(self, api_client):
+    @patch("sendgrid.SendGridAPIClient")
+    def test_send_project_invitation_email_invalid_role(self, mock_sendgrid, api_client):
         """Test sending project invitation email with invalid role"""
         data = {
             "invitee_email": "user@example.com",
@@ -522,7 +524,7 @@ class TestProjectInvitationEmail:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert "error" in response.data
 
-    @patch("apps.alerts.views.SendGridAPIClient")
+    @patch("sendgrid.SendGridAPIClient")
     def test_send_project_invitation_email_sendgrid_failure(self, mock_sendgrid, api_client):
         """Test handling SendGrid failure"""
         mock_response = Mock()
@@ -545,7 +547,7 @@ class TestProjectInvitationEmail:
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert "error" in response.data
 
-    @patch("apps.alerts.views.SendGridAPIClient")
+    @patch("sendgrid.SendGridAPIClient")
     def test_send_project_invitation_email_custom_expiration(self, mock_sendgrid, api_client):
         """Test sending project invitation email with custom expiration days"""
         mock_response = Mock()
