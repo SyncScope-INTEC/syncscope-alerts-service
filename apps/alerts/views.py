@@ -939,3 +939,124 @@ The SyncScope Team
     except Exception as e:
         logger.error(f"Error sending company invitation email: {str(e)}")
         return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def send_project_invitation_email(request):
+    """
+    Send project invitation email to invite users to join a project.
+    Called by management-service when an admin/supervisor invites a user.
+    """
+    from django.conf import settings
+    from django.template import loader
+    from sendgrid import SendGridAPIClient
+    from sendgrid.helpers.mail import Mail
+
+    # Validate required fields
+    invitee_email = request.data.get("invitee_email")
+    inviter_name = request.data.get("inviter_name")
+    inviter_email = request.data.get("inviter_email")
+    project_name = request.data.get("project_name")
+    team_name = request.data.get("team_name")
+    role = request.data.get("role", "developer")
+    invitation_token = request.data.get("invitation_token")
+    frontend_url = request.data.get("frontend_url")
+    expiration_days = request.data.get("expiration_days", 7)
+
+    if not all(
+        [invitee_email, inviter_name, inviter_email, project_name, team_name, invitation_token, frontend_url]
+    ):
+        return Response(
+            {
+                "error": "Missing required fields: invitee_email, inviter_name, "
+                "inviter_email, project_name, team_name, invitation_token, frontend_url"
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate role
+    valid_roles = ["supervisor", "developer"]
+    if role not in valid_roles:
+        return Response(
+            {"error": f"Invalid role. Must be one of: {', '.join(valid_roles)}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        # Get SendGrid API key
+        sendgrid_api_key = getattr(settings, "SENDGRID_API_KEY", None)
+        if not sendgrid_api_key:
+            logger.error("SENDGRID_API_KEY not configured")
+            return Response({"error": "Email service not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        # Get sender email
+        from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
+
+        # Role display names
+        role_names = {
+            "supervisor": "Supervisor",
+            "developer": "Developer",
+        }
+        role_display = role_names.get(role, "Developer")
+
+        # Build invitation URL
+        invitation_url = f"{frontend_url}/projects/accept-invitation?token={invitation_token}"
+
+        # Prepare email content using template
+        template = loader.get_template("alerts/project_invitation_email.html")
+        html_content = template.render(
+            {
+                "invitee_email": invitee_email,
+                "inviter_name": inviter_name,
+                "inviter_email": inviter_email,
+                "project_name": project_name,
+                "team_name": team_name,
+                "role": role,
+                "role_display": role_display,
+                "invitation_url": invitation_url,
+                "expiration_days": expiration_days,
+            }
+        )
+
+        # Plain text fallback
+        plain_content = f"""
+You've Been Invited to Join {project_name}!
+
+Hi there!
+
+{inviter_name} ({inviter_email}) has invited you to join the project "{project_name}"
+on the team "{team_name}" as a {role_display}.
+
+Accept this invitation: {invitation_url}
+
+This invitation will expire in {expiration_days} days.
+
+If you have any questions, please contact {inviter_email}.
+
+Best regards,
+The SyncScope Team
+        """
+
+        # Send email
+        message = Mail(
+            from_email=from_email,
+            to_emails=invitee_email,
+            subject=f"You've Been Invited to Join {project_name} on SyncScope",
+            plain_text_content=plain_content,
+            html_content=html_content,
+        )
+
+        sg = SendGridAPIClient(sendgrid_api_key)
+        response = sg.send(message)
+
+        if response.status_code in [200, 201, 202]:
+            logger.info(f"Project invitation email sent to {invitee_email} for project {project_name}")
+            return Response({"message": "Project invitation email sent successfully"}, status=status.HTTP_200_OK)
+        else:
+            logger.error(f"SendGrid returned status {response.status_code}")
+            return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    except Exception as e:
+        logger.error(f"Error sending project invitation email: {str(e)}")
+        return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
