@@ -964,9 +964,7 @@ def send_project_invitation_email(request):
     frontend_url = request.data.get("frontend_url")
     expiration_days = request.data.get("expiration_days", 7)
 
-    if not all(
-        [invitee_email, inviter_name, inviter_email, project_name, team_name, invitation_token, frontend_url]
-    ):
+    if not all([invitee_email, inviter_name, inviter_email, project_name, team_name, invitation_token, frontend_url]):
         return Response(
             {
                 "error": "Missing required fields: invitee_email, inviter_name, "
