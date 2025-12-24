@@ -437,3 +437,126 @@ class TestNotificationLogViewSet:
 
         # Should return 200 even if empty
         assert response.status_code == status.HTTP_200_OK
+
+
+@pytest.mark.django_db
+class TestProjectInvitationEmail:
+    """Tests for project invitation email endpoint"""
+
+    @patch("apps.alerts.views.send_email_via_sendgrid")
+    def test_send_project_invitation_email_success(self, mock_send_email, api_client):
+        """Test sending project invitation email successfully"""
+        mock_send_email.return_value = True
+
+        data = {
+            "invitee_email": "newuser@example.com",
+            "inviter_name": "John Doe",
+            "inviter_email": "john@example.com",
+            "project_name": "Test Project",
+            "team_name": "Test Team",
+            "role": "developer",
+            "invitation_token": "test-token-12345",
+            "frontend_url": "http://localhost:3000",
+            "expiration_days": 7,
+        }
+
+        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["message"] == "Project invitation email sent successfully"
+        mock_send_email.assert_called_once()
+
+    @patch("apps.alerts.views.send_email_via_sendgrid")
+    def test_send_project_invitation_email_supervisor_role(self, mock_send_email, api_client):
+        """Test sending project invitation email with supervisor role"""
+        mock_send_email.return_value = True
+
+        data = {
+            "invitee_email": "supervisor@example.com",
+            "inviter_name": "Admin User",
+            "inviter_email": "admin@example.com",
+            "project_name": "Production Project",
+            "team_name": "Core Team",
+            "role": "supervisor",
+            "invitation_token": "supervisor-token-67890",
+            "frontend_url": "http://localhost:3000",
+        }
+
+        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_send_email.assert_called_once()
+
+    def test_send_project_invitation_email_missing_fields(self, api_client):
+        """Test sending project invitation email with missing required fields"""
+        data = {
+            "invitee_email": "user@example.com",
+            "inviter_name": "Test User",
+            # Missing other required fields
+        }
+
+        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "error" in response.data
+
+    def test_send_project_invitation_email_invalid_role(self, api_client):
+        """Test sending project invitation email with invalid role"""
+        data = {
+            "invitee_email": "user@example.com",
+            "inviter_name": "Test User",
+            "inviter_email": "test@example.com",
+            "project_name": "Test Project",
+            "team_name": "Test Team",
+            "role": "invalid_role",
+            "invitation_token": "token123",
+            "frontend_url": "http://localhost:3000",
+        }
+
+        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert "error" in response.data
+
+    @patch("apps.alerts.views.send_email_via_sendgrid")
+    def test_send_project_invitation_email_sendgrid_failure(self, mock_send_email, api_client):
+        """Test handling SendGrid failure"""
+        mock_send_email.return_value = False
+
+        data = {
+            "invitee_email": "user@example.com",
+            "inviter_name": "Test User",
+            "inviter_email": "test@example.com",
+            "project_name": "Test Project",
+            "team_name": "Test Team",
+            "role": "developer",
+            "invitation_token": "token123",
+            "frontend_url": "http://localhost:3000",
+        }
+
+        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+
+        assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert "error" in response.data
+
+    @patch("apps.alerts.views.send_email_via_sendgrid")
+    def test_send_project_invitation_email_custom_expiration(self, mock_send_email, api_client):
+        """Test sending project invitation email with custom expiration days"""
+        mock_send_email.return_value = True
+
+        data = {
+            "invitee_email": "user@example.com",
+            "inviter_name": "Test User",
+            "inviter_email": "test@example.com",
+            "project_name": "Test Project",
+            "team_name": "Test Team",
+            "role": "developer",
+            "invitation_token": "token123",
+            "frontend_url": "http://localhost:3000",
+            "expiration_days": 14,
+        }
+
+        response = api_client.post("/alerts/send-project-invitation-email/", data, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        mock_send_email.assert_called_once()
