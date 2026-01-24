@@ -863,6 +863,9 @@ def send_company_invitation_email(request):
             logger.error("SENDGRID_API_KEY not configured")
             return Response({"error": "Email service not configured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        # Log API key prefix for debugging (safe - only shows first 10 chars)
+        logger.info(f"SendGrid API key starts with: {sendgrid_api_key[:15]}...")
+
         # Get sender email
         from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
         logger.info(f"Using sender email: {from_email}")
