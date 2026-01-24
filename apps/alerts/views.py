@@ -10,7 +10,7 @@ from django.shortcuts import get_object_or_404
 from django.template import loader
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import permissions, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.decorators import action, api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -814,11 +814,13 @@ The SyncScope Team
     },
 )
 @api_view(["POST"])
+@authentication_classes([])
 @permission_classes([])
 def send_company_invitation_email(request):
     """
     Send company invitation email to invite employees to join a company
     Called by auth-service when a company user invites a new team member
+    This endpoint is for internal service-to-service communication only.
     """
     from django.conf import settings
     from sendgrid import SendGridAPIClient
