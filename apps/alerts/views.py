@@ -569,7 +569,8 @@ class NotificationLogViewSet(ServerlessViewMixin, viewsets.ReadOnlyModelViewSet)
     },
 )
 @api_view(["POST"])
-@permission_classes([])  # No authentication for internal service calls
+@authentication_classes([])
+@permission_classes([permissions.AllowAny])
 def send_password_reset_email(request):
     """
     Send password reset email with 6-digit code
@@ -683,7 +684,8 @@ The SyncScope Team
     },
 )
 @api_view(["POST"])
-@permission_classes([])
+@authentication_classes([])
+@permission_classes([permissions.AllowAny])
 def send_welcome_email(request):
     """
     Send welcome email with temporary password to new user
@@ -815,12 +817,13 @@ The SyncScope Team
 )
 @api_view(["POST"])
 @authentication_classes([])
-@permission_classes([])
+@permission_classes([permissions.AllowAny])
 def send_company_invitation_email(request):
     """
     Send company invitation email to invite employees to join a company
     Called by auth-service when a company user invites a new team member
     This endpoint is for internal service-to-service communication only.
+    No authentication required as this is for internal service communication.
     """
     from django.conf import settings
     from sendgrid import SendGridAPIClient
@@ -955,11 +958,13 @@ The SyncScope Team
 
 
 @api_view(["POST"])
+@authentication_classes([])
 @permission_classes([permissions.AllowAny])
 def send_project_invitation_email(request):
     """
     Send project invitation email to invite users to join a project.
     Called by management-service when an admin/supervisor invites a user.
+    No authentication required as this is for internal service communication.
     """
     from django.conf import settings
     from django.template import loader
