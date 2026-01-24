@@ -40,7 +40,6 @@ class SecurityHeadersMiddleware:
         return response
 
 
-
 class RequestLoggingMiddleware:
     """Log API requests for monitoring and analytics"""
 

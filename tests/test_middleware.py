@@ -10,7 +10,6 @@ from django.core.cache import cache
 from django.http import HttpResponse, JsonResponse
 from django.test import RequestFactory, override_settings
 
-
 from apps.alerts.middleware import (
     AlertsPerformanceMiddleware,
     CacheControlMiddleware,

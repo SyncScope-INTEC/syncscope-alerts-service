@@ -11,11 +11,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory
 
-from apps.alerts.db_mixins import (
-    RetryableManager,
-    RetryableModelMixin,
-    ServerlessViewMixin,
-)
+from apps.alerts.db_mixins import RetryableManager, RetryableModelMixin, ServerlessViewMixin
 
 
 class TestRetryableModelMixin:

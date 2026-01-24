@@ -12,13 +12,7 @@ from django.conf import settings
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.test import APIRequestFactory
 
-from apps.alerts.authentication import (
-    AlertPermissions,
-    AlertsUser,
-    JWTAuthentication,
-    ServiceAuthentication,
-    get_auth_headers,
-)
+from apps.alerts.authentication import AlertPermissions, AlertsUser, JWTAuthentication, ServiceAuthentication, get_auth_headers
 
 
 class TestAlertsUser:
