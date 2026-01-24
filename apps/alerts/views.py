@@ -850,6 +850,8 @@ def send_company_invitation_email(request):
         )
 
     try:
+        logger.info(f"Processing company invitation email request for {invitee_email} to join {company_name}")
+
         # Get SendGrid API key
         sendgrid_api_key = getattr(settings, "SENDGRID_API_KEY", None)
         if not sendgrid_api_key:
@@ -858,6 +860,7 @@ def send_company_invitation_email(request):
 
         # Get sender email
         from_email = getattr(settings, "SENDGRID_FROM_EMAIL", settings.DEFAULT_FROM_EMAIL)
+        logger.info(f"Using sender email: {from_email}")
 
         # Role display names
         role_names = {
@@ -927,18 +930,19 @@ The SyncScope Team
         )
 
         sg = SendGridAPIClient(sendgrid_api_key)
+        logger.info(f"Sending email via SendGrid to {invitee_email}")
         response = sg.send(message)
 
         if response.status_code in [200, 201, 202]:
-            logger.info(f"Company invitation email sent to {invitee_email}")
+            logger.info(f"Company invitation email sent successfully to {invitee_email}. SendGrid status: {response.status_code}")
             return Response({"message": "Company invitation email sent successfully"}, status=status.HTTP_200_OK)
         else:
-            logger.error(f"SendGrid returned status {response.status_code}")
-            return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(f"SendGrid returned status {response.status_code}. Body: {response.body}. Headers: {response.headers}")
+            return Response({"error": f"Failed to send email. SendGrid status: {response.status_code}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     except Exception as e:
-        logger.error(f"Error sending company invitation email: {str(e)}")
-        return Response({"error": "Failed to send email"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        logger.error(f"Error sending company invitation email to {invitee_email}: {str(e)}", exc_info=True)
+        return Response({"error": f"Failed to send email: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["POST"])
