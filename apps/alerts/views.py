@@ -934,11 +934,18 @@ The SyncScope Team
         response = sg.send(message)
 
         if response.status_code in [200, 201, 202]:
-            logger.info(f"Company invitation email sent successfully to {invitee_email}. SendGrid status: {response.status_code}")
+            logger.info(
+                f"Company invitation email sent successfully to {invitee_email}. SendGrid status: {response.status_code}"
+            )
             return Response({"message": "Company invitation email sent successfully"}, status=status.HTTP_200_OK)
         else:
-            logger.error(f"SendGrid returned status {response.status_code}. Body: {response.body}. Headers: {response.headers}")
-            return Response({"error": f"Failed to send email. SendGrid status: {response.status_code}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            logger.error(
+                f"SendGrid returned status {response.status_code}. Body: {response.body}. Headers: {response.headers}"
+            )
+            return Response(
+                {"error": f"Failed to send email. SendGrid status: {response.status_code}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
     except Exception as e:
         logger.error(f"Error sending company invitation email to {invitee_email}: {str(e)}", exc_info=True)
