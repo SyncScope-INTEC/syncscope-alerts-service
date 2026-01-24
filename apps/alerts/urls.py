@@ -25,13 +25,11 @@ router.register(r"notifications", NotificationLogViewSet, basename="notification
 router.register(r"", AlertViewSet, basename="alerts")
 
 urlpatterns = [
-    path("", include(router.urls)),
-    # Password reset email endpoint (internal service use)
+    # Internal service email endpoints (no authentication required) - MUST be before router
     path("send-password-reset-email/", send_password_reset_email, name="send_password_reset_email"),
-    # Welcome email endpoint (internal service use)
     path("send-welcome-email/", send_welcome_email, name="send_welcome_email"),
-    # Company invitation email endpoint (internal service use)
     path("send-company-invitation-email/", send_company_invitation_email, name="send_company_invitation_email"),
-    # Project invitation email endpoint (internal service use)
     path("send-project-invitation-email/", send_project_invitation_email, name="send_project_invitation_email"),
+    # Router URLs (with authentication)
+    path("", include(router.urls)),
 ]
