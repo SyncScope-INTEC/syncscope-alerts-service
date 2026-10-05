@@ -28,7 +28,7 @@ channels-redis>=4.1.0
 daphne>=4.0.0
 
 # Static Files
-whitenoise>=6.5.0
+whitenoise>=6.12.0
 
 # API Documentation
 drf-spectacular>=0.26.0
