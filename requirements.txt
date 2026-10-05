@@ -25,7 +25,7 @@ django-celery-results>=2.5.0
 # WebSocket Support
 channels>=4.0.0
 channels-redis>=4.1.0
-daphne>=4.0.0
+daphne>=4.2.3
 
 # Static Files
 whitenoise>=6.5.0
